@@ -1,4 +1,5 @@
 import { prisma } from "./db";
+import { hashPassword } from "./lib/auth";
 
 async function main() {
   console.log("Seeding SAMPLE data...");
@@ -12,13 +13,14 @@ async function main() {
   await prisma.agentCredential.deleteMany();
   await prisma.device.deleteMany();
   await prisma.userSettings.deleteMany();
+  await prisma.session.deleteMany();
   await prisma.user.deleteMany();
   await prisma.releaseMetadata.deleteMany();
 
   const user = await prisma.user.create({
     data: {
       email: "demo@updatepilot.local",
-      passwordHash: "SAMPLE-NOT-A-REAL-HASH", // replaced when login is built
+      passwordHash: await hashPassword("Demo@12345"), // replaced when login is built
       displayName: "Demo User (sample)",
       settings: { create: {} },
     },

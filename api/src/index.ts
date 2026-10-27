@@ -1,18 +1,35 @@
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
+import rateLimit from "express-rate-limit";
 import "dotenv/config";
+import authRouter from "./routes/auth";
 import applicationsRouter from "./routes/applications";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-app.use(cors());
-app.use(express.json());
+// Only the frontend may call the API with cookies
+app.use(cors({ origin: process.env.WEB_ORIGIN ?? "http://localhost:3000", credentials: true }));
+app.use(express.json({ limit: "100kb" }));
+app.use(cookieParser());
+
+// Max 20 login/register attempts per 15 minutes per IP
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 20,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: { error: { code: "RATE_LIMITED", message: "Too many attempts. Try again in 15 minutes." } },
+});
 
 app.get("/api/v1/health", (_req, res) => {
   res.json({ status: "ok", service: "UpdatePilot API" });
 });
 
+app.use("/api/v1/auth/login", authLimiter);
+app.use("/api/v1/auth/register", authLimiter);
+app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/applications", applicationsRouter);
 
 // Unknown routes

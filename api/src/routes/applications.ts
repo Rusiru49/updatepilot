@@ -1,9 +1,11 @@
+import { requireAuth } from "../middleware/requireAuth";
 import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../db";
 import { Prisma } from "../generated/prisma/client";
 
 const router = Router();
+router.use(requireAuth); // every route in this file needs login
 
 const querySchema = z.object({
   deviceId: z.string().uuid().optional(),
@@ -33,6 +35,7 @@ router.get("/", async (req, res) => {
   const { deviceId, search, matchStatus, source, sort, order, page, pageSize } = parsed.data;
 
   const where: Prisma.ApplicationWhereInput = {
+    device: { userId: req.user!.id },
     ...(deviceId ? { deviceId } : {}),
     ...(matchStatus ? { matchStatus } : {}),
     ...(source ? { source } : {}),

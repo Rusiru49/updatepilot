@@ -76,6 +76,7 @@ model User {
   scanJobs    ScanJob[]
   updateJobs  UpdateJob[]
   auditEvents AuditEvent[]
+  sessions    Session[]
 
   @@map("users")
 }
@@ -261,4 +262,17 @@ model AuditEvent {
 
   @@index([createdAt])
   @@map("audit_events")
+}
+
+// Login sessions — only a hash of the session token is stored
+model Session {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([userId])
+  @@map("sessions")
 }
