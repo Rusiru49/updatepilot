@@ -3,6 +3,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../db";
 import { Prisma } from "../generated/prisma/client";
+import { getLatestVersions, getUpdateStatus } from "../lib/updates";
 
 const router = Router();
 router.use(requireAuth); // every route in this file needs login
@@ -58,23 +59,11 @@ router.get("/", async (req, res) => {
   ]);
 
   // Find the newest known version for each package on this page
-  const packageIds = items.map((a) => a.packageId).filter((p): p is string => !!p);
-  const releases = await prisma.releaseMetadata.findMany({
-    where: { packageId: { in: packageIds } },
-    orderBy: { fetchedAt: "desc" },
-  });
-  const latest = new Map<string, string>();
-  for (const r of releases) if (!latest.has(r.packageId)) latest.set(r.packageId, r.version);
+    const latest = await getLatestVersions(items.map((a) => a.packageId).filter((p): p is string => !!p));
 
   res.json({
     items: items.map((a) => {
       const availableVersion = a.packageId ? latest.get(a.packageId) ?? null : null;
-      const updateStatus =
-        a.matchStatus !== "MATCHED" ? "unsupported"
-        : !availableVersion ? "unknown"
-        : availableVersion !== a.installedVersion ? "update_available"
-        : "up_to_date";
-
       return {
         id: a.id,
         displayName: a.displayName,
@@ -84,13 +73,89 @@ router.get("/", async (req, res) => {
         packageId: a.packageId,
         source: a.source,
         matchStatus: a.matchStatus,
-        updateStatus,
+        updateStatus: getUpdateStatus(a.matchStatus, a.installedVersion, availableVersion),
         lastSeenAt: a.lastSeenAt,
       };
     }),
     page,
     pageSize,
     total,
+  });
+});
+
+// GET /api/v1/applications/:id
+router.get("/:id", async (req, res) => {
+  const id = z.string().uuid().safeParse(req.params.id);
+  if (!id.success) {
+    res.status(400).json({ error: { code: "VALIDATION_ERROR", message: "Invalid application id" } });
+    return;
+  }
+
+  const app = await prisma.application.findFirst({
+    where: { id: id.data, device: { userId: req.user!.id } }, // must belong to this user
+    include: {
+      device: { select: { id: true, deviceName: true, status: true } },
+      snapshots: {
+        orderBy: { recordedAt: "desc" },
+        take: 10,
+        select: { version: true, recordedAt: true, scanJobId: true },
+      },
+      updateJobs: {
+        orderBy: { createdAt: "desc" },
+        take: 10,
+        select: {
+          id: true, fromVersion: true, targetVersion: true, state: true,
+          verificationResult: true, exitCode: true, createdAt: true, finishedAt: true,
+        },
+      },
+    },
+  });
+
+  // Same 404 whether it doesn't exist or belongs to someone else
+  if (!app) {
+    res.status(404).json({ error: { code: "NOT_FOUND", message: "Application not found" } });
+    return;
+  }
+
+  const latestRelease = app.packageId
+    ? await prisma.releaseMetadata.findFirst({ where: { packageId: app.packageId }, orderBy: { fetchedAt: "desc" } })
+    : null;
+
+  const findings = app.packageId
+    ? await prisma.securityFinding.findMany({ where: { packageId: app.packageId }, orderBy: { lastVerifiedAt: "desc" } })
+    : [];
+
+  res.json({
+    application: {
+      id: app.id,
+      displayName: app.displayName,
+      publisher: app.publisher,
+      installedVersion: app.installedVersion,
+      packageId: app.packageId,
+      source: app.source,
+      matchStatus: app.matchStatus,
+      updateStatus: getUpdateStatus(app.matchStatus, app.installedVersion, latestRelease?.version ?? null),
+      firstSeenAt: app.firstSeenAt,
+      lastSeenAt: app.lastSeenAt,
+    },
+    device: app.device,
+    latestRelease: latestRelease && {
+      version: latestRelease.version,
+      channel: latestRelease.channel,
+      releaseDate: latestRelease.releaseDate,
+      changelogUrl: latestRelease.changelogUrl,
+      source: latestRelease.source,
+      fetchedAt: latestRelease.fetchedAt,
+    },
+    securityFindings: findings.map((f) => ({
+      advisoryId: f.advisoryId,
+      severity: f.severity,
+      affectedRange: f.affectedRange,
+      source: f.source,
+      lastVerifiedAt: f.lastVerifiedAt,
+    })),
+    versionHistory: app.snapshots,
+    updateHistory: app.updateJobs,
   });
 });
 

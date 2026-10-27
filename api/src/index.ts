@@ -5,6 +5,9 @@ import rateLimit from "express-rate-limit";
 import "dotenv/config";
 import authRouter from "./routes/auth";
 import applicationsRouter from "./routes/applications";
+import dashboardRouter from "./routes/dashboard";
+import devicesRouter from "./routes/devices";
+import historyRouter from "./routes/history";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -13,6 +16,9 @@ const PORT = process.env.PORT || 4000;
 app.use(cors({ origin: process.env.WEB_ORIGIN ?? "http://localhost:3000", credentials: true }));
 app.use(express.json({ limit: "100kb" }));
 app.use(cookieParser());
+app.use("/api/v1/dashboard", dashboardRouter);
+app.use("/api/v1/devices", devicesRouter);
+app.use("/api/v1/history", historyRouter);
 
 // Max 20 login/register attempts per 15 minutes per IP
 const authLimiter = rateLimit({

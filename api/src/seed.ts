@@ -58,6 +58,7 @@ async function main() {
     },
   });
 
+  const created = new Map<string, string>();
   for (const a of apps) {
     const app = await prisma.application.create({
       data: {
@@ -67,10 +68,47 @@ async function main() {
         matchStatus: a.packageId ? "MATCHED" : "UNSUPPORTED",
       },
     });
+    created.set(a.displayName, app.id);
     await prisma.appSnapshot.create({
       data: { scanJobId: scan.id, applicationId: app.id, version: a.installedVersion },
     });
   }
+
+  // Sample update attempts: one success, one failure
+  await prisma.updateJob.createMany({
+    data: [
+      {
+        applicationId: created.get("7-Zip")!,
+        deviceId: device.id,
+        requestedById: user.id,
+        fromVersion: "24.07",
+        targetVersion: "24.08",
+        state: "SUCCEEDED",
+        idempotencyKey: "seed-update-1",
+        exitCode: 0,
+        verifiedVersion: "24.08",
+        verificationResult: "VERIFIED",
+        confirmedAt: new Date(),
+        startedAt: new Date(),
+        finishedAt: new Date(),
+      },
+      {
+        applicationId: created.get("Zoom Workplace")!,
+        deviceId: device.id,
+        requestedById: user.id,
+        fromVersion: "6.1.10",
+        targetVersion: "6.2.3",
+        state: "FAILED",
+        idempotencyKey: "seed-update-2",
+        exitCode: 1603,
+        verificationResult: "NOT_CHECKED",
+        errorMessage: "Installer returned exit code 1603 (the app may be running)",
+        confirmedAt: new Date(),
+        startedAt: new Date(),
+        finishedAt: new Date(),
+      },
+    ],
+  });
 
   const releases: [string, string][] = [
     ["Google.Chrome", "130.0.6723.70"],
