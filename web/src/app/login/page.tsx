@@ -6,6 +6,7 @@ import { api, ApiError } from "@/lib/api";
 import type { User } from "@/lib/types";
 import { useAuth } from "@/components/AuthProvider";
 import { Banner, Button } from "@/components/ui";
+import Link from "next/link";
 
 const inputClass =
   "w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary-soft";
@@ -84,6 +85,13 @@ export default function LoginPage() {
             {submitting ? "Signing in…" : "Sign in"}
           </Button>
         </form>
+
+        <p className="mt-6 text-center text-sm text-muted">
+          New to UpdatePilot?{" "}
+          <Link href="/register" className="font-semibold text-primary hover:underline">
+            Create an account
+          </Link>
+        </p>
 
         {/* Development only — remove before release */}
         <p className="mt-6 text-xs text-muted">
