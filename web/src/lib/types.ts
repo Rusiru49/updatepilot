@@ -30,3 +30,49 @@ export type Dashboard = {
   isStale: boolean;
   recentActivity: { id: string; eventType: string; createdAt: string }[];
 };
+
+export type JobState =
+  | "QUEUED" | "SENT_TO_AGENT" | "RUNNING" | "VERIFYING"
+  | "SUCCEEDED" | "FAILED" | "CANCELLED" | "RESTART_REQUIRED";
+
+export type AppDetails = {
+  application: {
+    id: string;
+    displayName: string;
+    publisher: string | null;
+    installedVersion: string | null;
+    packageId: string | null;
+    source: string | null;
+    matchStatus: AppItem["matchStatus"];
+    updateStatus: UpdateStatus;
+    firstSeenAt: string;
+    lastSeenAt: string;
+  };
+  device: { id: string; deviceName: string; status: string };
+  latestRelease: {
+    version: string;
+    channel: string | null;
+    releaseDate: string | null;
+    changelogUrl: string | null;
+    source: string;
+    fetchedAt: string;
+  } | null;
+  securityFindings: {
+    advisoryId: string;
+    severity: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL" | "UNKNOWN";
+    affectedRange: string | null;
+    source: string;
+    lastVerifiedAt: string;
+  }[];
+  versionHistory: { version: string; recordedAt: string; scanJobId: string }[];
+  updateHistory: {
+    id: string;
+    fromVersion: string;
+    targetVersion: string;
+    state: JobState;
+    verificationResult: "PENDING" | "VERIFIED" | "MISMATCH" | "NOT_CHECKED";
+    exitCode: number | null;
+    createdAt: string;
+    finishedAt: string | null;
+  }[];
+};

@@ -119,8 +119,15 @@ async function main() {
     ["OpenJS.NodeJS.LTS", "20.18.0"],
     ["Git.Git", "2.46.2"],
   ];
-  await prisma.releaseMetadata.createMany({
-    data: releases.map(([packageId, version]) => ({ packageId, version, source: "winget", channel: "stable" })),
+    await prisma.releaseMetadata.createMany({
+    data: releases.map(([packageId, version]) => ({
+      packageId,
+      version,
+      source: "winget",
+      channel: "stable",
+      releaseDate: new Date("2026-10-15"),
+      changelogUrl: packageId === "Google.Chrome" ? "https://chromereleases.googleblog.com/" : null,
+    })),
   });
 
   await prisma.auditEvent.create({

@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
-import { AlertTriangle, Inbox, Info, RefreshCw } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Inbox, Info, RefreshCw } from "lucide-react";
 
-type Tone = "success" | "info" | "warning" | "danger" | "neutral";
+export type Tone = "success" | "info" | "warning" | "danger" | "neutral";
 
 const softTone: Record<Tone, string> = {
   success: "bg-success-soft text-success",
@@ -69,7 +69,7 @@ export function StatCard({
 }
 
 export function Banner({ tone, children }: { tone: Tone; children: ReactNode }) {
-  const Icon = tone === "info" ? Info : AlertTriangle;
+  const Icon = tone === "info" ? Info : tone === "success" ? CheckCircle2 : AlertTriangle;
   return (
     <div role="status" className={`flex items-start gap-3 rounded-lg px-4 py-3 text-sm ${softTone[tone]}`}>
       <Icon size={18} className="mt-0.5 shrink-0" aria-hidden />

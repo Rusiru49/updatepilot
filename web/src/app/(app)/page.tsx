@@ -124,7 +124,9 @@ export default function OverviewPage() {
                   {updates.map((a) => (
                     <tr key={a.id} className="border-b border-border last:border-0">
                       <td className="py-3 pr-4">
-                        <div className="font-medium">{a.displayName}</div>
+                        <Link href={`/applications/${a.id}`} className="font-medium hover:text-primary hover:underline">
+                          {a.displayName}
+                        </Link>
                         <div className="text-xs text-muted">{a.publisher ?? "Unknown publisher"}</div>
                       </td>
                       <td className="py-3 pr-4 font-mono text-xs">{a.installedVersion}</td>
