@@ -76,3 +76,28 @@ export type AppDetails = {
     finishedAt: string | null;
   }[];
 };
+
+export type HistoryItem = {
+  id: string;
+  type: "scan" | "update";
+  createdAt: string;
+  state: JobState;
+  device: string;
+  target: string;
+  details: string | null;
+  error: string | null;
+  exitCode?: number | null;
+  verificationResult?: "PENDING" | "VERIFIED" | "MISMATCH" | "NOT_CHECKED";
+};
+
+export type Device = {
+  id: string;
+  deviceName: string;
+  osVersion: string | null;
+  agentVersion: string | null;
+  status: "ONLINE" | "OFFLINE" | "REVOKED";
+  lastSeenAt: string | null;
+  pairedAt: string | null;
+  createdAt: string;
+  applicationCount: number;
+};
