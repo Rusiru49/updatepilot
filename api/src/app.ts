@@ -8,6 +8,7 @@ import applicationsRouter from "./routes/applications";
 import dashboardRouter from "./routes/dashboard";
 import devicesRouter from "./routes/devices";
 import historyRouter from "./routes/history";
+import agentRouter from "./routes/agent";
 
 const app = express();
 
@@ -25,6 +26,15 @@ const authLimiter = rateLimit({
   message: { error: { code: "RATE_LIMITED", message: "Too many attempts. Try again in 15 minutes." } },
 });
 
+// Max 10 pairing attempts per 15 minutes per IP (stops code guessing)
+const pairLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: { error: { code: "RATE_LIMITED", message: "Too many pairing attempts. Try again later." } },
+});
+
 app.get("/api/v1/health", (_req, res) => {
   res.json({ status: "ok", service: "UpdatePilot API" });
 });
@@ -36,6 +46,8 @@ app.use("/api/v1/applications", applicationsRouter);
 app.use("/api/v1/dashboard", dashboardRouter);
 app.use("/api/v1/devices", devicesRouter);
 app.use("/api/v1/history", historyRouter);
+app.use("/api/v1/agent/pair", pairLimiter);
+app.use("/api/v1/agent", agentRouter);
 
 // Unknown routes
 app.use((_req, res) => {

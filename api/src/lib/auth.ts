@@ -16,8 +16,7 @@ export const cookieOptions: CookieOptions = {
 
 export const hashPassword = (password: string) => bcrypt.hash(password, 12);
 export const verifyPassword = (password: string, hash: string) => bcrypt.compare(password, hash);
-
-const sha256 = (value: string) => crypto.createHash("sha256").update(value).digest("hex");
+export const sha256 = (value: string) => crypto.createHash("sha256").update(value).digest("hex");
 
 // Creates a random token. Only its hash is saved in the database.
 export async function createSession(userId: string) {

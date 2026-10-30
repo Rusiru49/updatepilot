@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "../db";
 import { requireAuth } from "../middleware/requireAuth";
 import { getLatestVersions, getUpdateStatus } from "../lib/updates";
+import { effectiveStatus } from "../lib/devices";
 
 const router = Router();
 router.use(requireAuth);
@@ -73,7 +74,7 @@ router.get("/", async (req, res) => {
     device: {
       id: device.id,
       deviceName: device.deviceName,
-      status: device.status,
+      status: effectiveStatus(device),
       agentVersion: device.agentVersion,
       lastSeenAt: device.lastSeenAt,
     },
