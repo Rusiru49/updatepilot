@@ -9,6 +9,7 @@ import type { AppItem, Paged } from "@/lib/types";
 import { timeAgo } from "@/lib/format";
 import { Button, Card, EmptyState, ErrorState, Skeleton } from "@/components/ui";
 import { UpdateStatusBadge } from "@/components/StatusBadge";
+import { Pagination } from "@/components/Pagination";
 
 const PAGE_SIZES = [5, 10, 20, 50];
 const SORT_KEYS = ["displayName", "publisher", "lastSeenAt"] as const;
@@ -98,7 +99,6 @@ function ApplicationsView() {
   }
 
   const hasFilters = !!search || !!matchStatus;
-  const totalPages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
 
   return (
     <div className="space-y-6">
@@ -200,32 +200,14 @@ function ApplicationsView() {
           </div>
 
           {/* Pagination */}
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-3 text-sm">
-            <span className="text-muted">
-              Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, data.total)} of {data.total}
-            </span>
-            <div className="flex flex-wrap items-center gap-2">
-              <label className="flex items-center gap-2 text-muted">
-                Rows
-                <select
-                  value={pageSize}
-                  onChange={(e) => updateParams({ pageSize: e.target.value, page: null })}
-                  className={`${fieldClass} py-1`}
-                >
-                  {PAGE_SIZES.map((n) => (
-                    <option key={n} value={n}>{n}</option>
-                  ))}
-                </select>
-              </label>
-              <Button variant="secondary" className="px-3 py-1.5" disabled={page <= 1} onClick={() => updateParams({ page: page - 1 })}>
-                Previous
-              </Button>
-              <span className="text-muted">Page {page} of {totalPages}</span>
-              <Button variant="secondary" className="px-3 py-1.5" disabled={page >= totalPages} onClick={() => updateParams({ page: page + 1 })}>
-                Next
-              </Button>
-            </div>
-          </div>
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            total={data.total}
+            pageSizes={PAGE_SIZES}
+            onPageChange={(p) => updateParams({ page: p })}
+            onPageSizeChange={(size) => updateParams({ pageSize: size, page: null })}
+          />
         </Card>
       ) : null}
     </div>
