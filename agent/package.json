@@ -1,0 +1,18 @@
+{
+  "name": "updatepilot-agent",
+  "version": "0.1.0",
+  "private": true,
+  "description": "UpdatePilot Windows agent",
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "pair": "tsx src/cli.ts pair",
+    "status": "tsx src/cli.ts status",
+    "unpair": "tsx src/cli.ts unpair"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}
