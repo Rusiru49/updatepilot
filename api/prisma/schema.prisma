@@ -148,6 +148,9 @@ model Application {
   matchStatus      MatchStatus @default(UNMATCHED)
   firstSeenAt      DateTime    @default(now())
   lastSeenAt       DateTime    @default(now())
+  localId          String?  // the Id exactly as winget showed it (Git.Git, ARP\..., MSIX\...)
+  versionUncertain Boolean  @default(false) // "> 3.14.7", "Unknown"
+  removedAt        DateTime? // set when the app is no longer found by a scan
 
   updateJobs UpdateJob[]
   snapshots  AppSnapshot[]
@@ -155,6 +158,7 @@ model Application {
   @@index([deviceId])
   @@index([packageId])
   @@map("applications")
+  @@index([deviceId, localId])
 }
 
 // Each scan of a device

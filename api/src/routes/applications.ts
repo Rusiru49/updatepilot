@@ -37,6 +37,7 @@ router.get("/", async (req, res) => {
 
   const where: Prisma.ApplicationWhereInput = {
     device: { userId: req.user!.id },
+    removedAt: null,
     ...(deviceId ? { deviceId } : {}),
     ...(matchStatus ? { matchStatus } : {}),
     ...(source ? { source } : {}),

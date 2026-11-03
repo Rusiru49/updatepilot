@@ -17,7 +17,7 @@ export class NetworkError extends Error {}
 export async function request<T>(
   serverUrl: string,
   path: string,
-  options: { method?: string; token?: string; body?: unknown } = {},
+  options: { method?: string; token?: string; body?: unknown; timeoutMs?: number } = {},
 ): Promise<T> {
   let res: Response;
   try {
@@ -29,7 +29,7 @@ export async function request<T>(
         ...(options.token ? { Authorization: `Bearer ${options.token}` } : {}),
       },
       body: options.body === undefined ? undefined : JSON.stringify(options.body),
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      signal: AbortSignal.timeout(options.timeoutMs ?? REQUEST_TIMEOUT_MS),
     });
   } catch (err) {
     const reason = (err as Error).name === "TimeoutError" ? "timed out" : "connection failed";

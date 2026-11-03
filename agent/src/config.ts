@@ -10,6 +10,8 @@ export const HEARTBEAT_INTERVAL_MS = 30_000; // "I'm alive" every 30 s
 export const REQUEST_TIMEOUT_MS = 10_000; // give up on a request after 10 s
 export const FIRST_RETRY_DELAY_MS = 5_000; // when the server is down: 5 s, 10 s, 20 s ...
 export const MAX_RETRY_DELAY_MS = 60_000; // ... up to 60 s
+export const POLL_INTERVAL_MS = 5_000; // ask the server for work (and say "I'm alive") every 5 s
+export const UPLOAD_TIMEOUT_MS = 60_000; // sending scan results can take longer
 
 // Per-user folder, e.g. C:\Users\ASUS\AppData\Local\UpdatePilot
 // (outside the project, so the key can never be committed to Git)

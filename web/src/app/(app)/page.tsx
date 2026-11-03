@@ -7,6 +7,7 @@ import { api, ApiError } from "@/lib/api";
 import type { AppItem, Dashboard, Paged } from "@/lib/types";
 import { activityLabel, timeAgo } from "@/lib/format";
 import { Banner, Button, Card, EmptyState, ErrorState, Skeleton, StatCard } from "@/components/ui";
+import { ScanControl } from "@/components/ScanControl";
 
 export default function OverviewPage() {
   const [data, setData] = useState<Dashboard | null>(null);
@@ -14,16 +15,19 @@ export default function OverviewPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  // silent = refresh in the background without showing the loading skeleton
+  const load = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     setError(null);
     try {
-      const [dashboard, apps] = await Promise.all([
-        api<Dashboard>("/dashboard"),
-        api<Paged<AppItem>>("/applications?pageSize=100"),
-      ]);
+      const dashboard = await api<Dashboard>("/dashboard");
       setData(dashboard);
-      setUpdates(apps.items.filter((a) => a.updateStatus === "update_available").slice(0, 5));
+      if (dashboard.device) {
+        const apps = await api<Paged<AppItem>>(`/applications?pageSize=100&deviceId=${dashboard.device.id}`);
+        setUpdates(apps.items.filter((a) => a.updateStatus === "update_available").slice(0, 5));
+      } else {
+        setUpdates([]);
+      }
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Something went wrong");
     } finally {
@@ -31,12 +35,16 @@ export default function OverviewPage() {
     }
   }, []);
 
+  const refresh = useCallback(() => {
+    load(true);
+  }, [load]);
+
   useEffect(() => {
     load();
   }, [load]);
 
   if (loading) return <OverviewSkeleton />;
-  if (error) return <ErrorState message={error} onRetry={load} />;
+  if (error) return <ErrorState message={error} onRetry={() => load()} />;
   if (!data) return null;
 
   // Empty state: no computer paired yet
@@ -44,11 +52,11 @@ export default function OverviewPage() {
     return (
       <EmptyState
         title="No computer connected yet"
-        message="Install the UpdatePilot agent and pair your computer to see installed apps and available updates."
+        message="Run the UpdatePilot agent on your Windows computer and pair it to see installed apps and available updates."
         action={
-          <Button disabled title="Agent pairing is built in Week 3">
-            Connect computer
-          </Button>
+          <Link href="/settings" className="text-sm font-semibold text-primary hover:underline">
+            Go to Settings &amp; agent to pair a computer
+          </Link>
         }
       />
     );
@@ -66,7 +74,7 @@ export default function OverviewPage() {
             {data.device.deviceName} · last scan {timeAgo(data.lastScan?.finishedAt)}
           </p>
         </div>
-        <Button variant="secondary" onClick={load}>
+        <Button variant="secondary" onClick={() => load()}>
           <RefreshCw size={16} aria-hidden /> Refresh
         </Button>
       </header>
@@ -76,7 +84,10 @@ export default function OverviewPage() {
           Showing <strong>sample data</strong>. These are not real scan results.
         </Banner>
       )}
-      {data.isStale && (
+      {!isSample && !data.lastScan && (
+        <Banner tone="info">This computer hasn&apos;t been scanned yet. Click <strong>Scan now</strong> to see its apps.</Banner>
+      )}
+      {data.lastScan && data.isStale && (
         <Banner tone="warning">
           These results are more than 24 hours old. Versions may have changed since the last scan.
         </Banner>
@@ -109,7 +120,9 @@ export default function OverviewPage() {
           </div>
 
           {updates.length === 0 ? (
-            <p className="py-6 text-center text-sm text-muted">Everything is up to date.</p>
+            <p className="py-6 text-center text-sm text-muted">
+              {data.lastScan ? "Everything is up to date." : "Scan this computer to check for updates."}
+            </p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -127,7 +140,7 @@ export default function OverviewPage() {
                         <Link href={`/applications/${a.id}`} className="font-medium hover:text-primary hover:underline">
                           {a.displayName}
                         </Link>
-                        <div className="text-xs text-muted">{a.publisher ?? "Unknown publisher"}</div>
+                        <div className="font-mono text-xs text-muted">{a.packageId ?? a.publisher ?? ""}</div>
                       </td>
                       <td className="py-3 pr-4 font-mono text-xs">{a.installedVersion}</td>
                       <td className="py-3 font-mono text-xs font-semibold">{a.availableVersion}</td>
@@ -141,15 +154,18 @@ export default function OverviewPage() {
 
         <div className="space-y-6">
           <Card>
-            <h2 className="mb-2 font-semibold">Next action</h2>
-            <p className="mb-4 text-sm text-muted">
-              {online
-                ? "Run a new scan to refresh installed versions."
-                : "The agent is offline. Scanning will be available once the agent is connected."}
-            </p>
-            <Button disabled title="Scanning is built in Week 3">
-              Scan now
-            </Button>
+            <h2 className="mb-3 font-semibold">Scan</h2>
+            {isSample ? (
+              <p className="text-sm text-muted">Sample devices can&apos;t be scanned. Pair a real computer in Settings.</p>
+            ) : (
+              <ScanControl
+                deviceId={data.device.id}
+                deviceName={data.device.deviceName}
+                online={online}
+                activeScanId={data.activeScan?.id ?? null}
+                onFinished={refresh}
+              />
+            )}
           </Card>
 
           <Card>

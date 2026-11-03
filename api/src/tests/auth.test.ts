@@ -108,6 +108,15 @@ describe("Auth API", () => {
     await agent.get("/api/v1/auth/me").expect(401);
   });
 
+    it("returns 400 (not 500) for malformed JSON", async () => {
+    const res = await request(app)
+      .post("/api/v1/auth/login")
+      .set("Content-Type", "application/json")
+      .send('{"email": not-json}')
+      .expect(400);
+    assert.equal(res.body.error.code, "INVALID_JSON");
+  });
+
   // Keep this test LAST — it uses up the login limit
   it("rate-limits repeated login attempts with 429", async () => {
     let lastStatus = 0;

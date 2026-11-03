@@ -17,6 +17,11 @@ const ACTIVITY_LABELS: Record<string, string> = {
   "update.failed": "Update failed",
   "update.restart_required": "Update needs a restart",
   "update.cancelled": "Update cancelled",
+  "scan.requested": "Scan requested",
+  "scan.failed": "Scan failed",
+  "device.paired": "Device paired",
+  "device.revoked": "Device revoked",
+  "pairing_code.created": "Pairing code created",
 };
 
 export const activityLabel = (eventType: string) => ACTIVITY_LABELS[eventType] ?? eventType;

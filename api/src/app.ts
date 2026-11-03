@@ -9,12 +9,14 @@ import dashboardRouter from "./routes/dashboard";
 import devicesRouter from "./routes/devices";
 import historyRouter from "./routes/history";
 import agentRouter from "./routes/agent";
+import scansRouter from "./routes/scans";
 
 const app = express();
 
 // Only the frontend may call the API with cookies
 app.use(cors({ origin: process.env.WEB_ORIGIN ?? "http://localhost:3000", credentials: true }));
-app.use(express.json({ limit: "100kb" }));
+app.use("/api/v1/agent", express.json({ limit: "2mb" })); // scan results can be large
+app.use(express.json({ limit: "100kb" })); // everything else stays small
 app.use(cookieParser());
 
 // Max 20 login/register attempts per 15 minutes per IP
@@ -46,6 +48,7 @@ app.use("/api/v1/applications", applicationsRouter);
 app.use("/api/v1/dashboard", dashboardRouter);
 app.use("/api/v1/devices", devicesRouter);
 app.use("/api/v1/history", historyRouter);
+app.use("/api/v1/scans", scansRouter);
 app.use("/api/v1/agent/pair", pairLimiter);
 app.use("/api/v1/agent", agentRouter);
 
@@ -56,6 +59,19 @@ app.use((_req, res) => {
 
 // Central error handler
 app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  const e = err as { type?: string };
+
+  // Body is not valid JSON → client error, not a server crash
+  if (e?.type === "entity.parse.failed") {
+    res.status(400).json({ error: { code: "INVALID_JSON", message: "The request body is not valid JSON" } });
+    return;
+  }
+  // Body bigger than the allowed limit
+  if (e?.type === "entity.too.large") {
+    res.status(413).json({ error: { code: "PAYLOAD_TOO_LARGE", message: "The request body is too large" } });
+    return;
+  }
+
   console.error(err);
   res.status(500).json({ error: { code: "INTERNAL_ERROR", message: "Something went wrong" } });
 });

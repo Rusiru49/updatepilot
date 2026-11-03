@@ -27,6 +27,7 @@ export type Dashboard = {
   } | null;
   totals: { applications: number; updatesAvailable: number; upToDate: number; unsupported: number };
   lastScan: { id: string; state: string; appsFound: number | null; finishedAt: string | null } | null;
+  activeScan: { id: string; state: JobState } | null;
   isStale: boolean;
   recentActivity: { id: string; eventType: string; createdAt: string }[];
 };

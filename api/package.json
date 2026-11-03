@@ -9,7 +9,7 @@
     "start": "tsx src/index.ts",
     "seed": "tsx src/seed.ts",
     "test:db": "node --env-file=.env.test node_modules/prisma/build/index.js migrate deploy",
-    "test": "tsx --env-file=.env.test --test --test-concurrency=1 src/tests/auth.test.ts src/tests/data.test.ts"
+    "test": "tsx --env-file=.env.test --test --test-concurrency=1 src/tests/auth.test.ts src/tests/data.test.ts src/tests/agent.test.ts src/tests/scans.test.ts"
 
   },
   "keywords": [],

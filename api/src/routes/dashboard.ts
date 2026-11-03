@@ -4,6 +4,7 @@ import { prisma } from "../db";
 import { requireAuth } from "../middleware/requireAuth";
 import { getLatestVersions, getUpdateStatus } from "../lib/updates";
 import { effectiveStatus } from "../lib/devices";
+import { ACTIVE_SCAN_STATES, expireStaleScans } from "../lib/scans";
 
 const router = Router();
 router.use(requireAuth);
@@ -21,9 +22,10 @@ router.get("/", async (req, res) => {
   const { deviceId } = parsed.data;
   const userId = req.user!.id;
 
+  // A chosen device, or the most recently active one that isn't revoked
   const device = await prisma.device.findFirst({
-    where: { userId, ...(deviceId ? { id: deviceId } : {}) },
-    orderBy: { createdAt: "asc" },
+    where: { userId, ...(deviceId ? { id: deviceId } : { status: { not: "REVOKED" } }) },
+    orderBy: [{ lastSeenAt: { sort: "desc", nulls: "last" } }, { createdAt: "asc" }],
   });
 
   if (!device && deviceId) {
@@ -37,14 +39,17 @@ router.get("/", async (req, res) => {
       device: null,
       totals: { applications: 0, updatesAvailable: 0, upToDate: 0, unsupported: 0 },
       lastScan: null,
+      activeScan: null,
       isStale: false,
       recentActivity: [],
     });
     return;
   }
 
+  await expireStaleScans(device.id);
+
   const apps = await prisma.application.findMany({
-    where: { deviceId: device.id },
+    where: { deviceId: device.id, removedAt: null },
     select: { packageId: true, installedVersion: true, matchStatus: true },
   });
   const latest = await getLatestVersions(apps.map((a) => a.packageId).filter((p): p is string => !!p));
@@ -57,18 +62,24 @@ router.get("/", async (req, res) => {
     else if (status === "unsupported") unsupported++;
   }
 
-  const lastScan = await prisma.scanJob.findFirst({
-    where: { deviceId: device.id },
-    orderBy: { createdAt: "desc" },
-    select: { id: true, state: true, appsFound: true, startedAt: true, finishedAt: true, createdAt: true },
-  });
-
-  const recentActivity = await prisma.auditEvent.findMany({
-    where: { OR: [{ actorUserId: userId }, { deviceId: device.id }] },
-    orderBy: { createdAt: "desc" },
-    take: 5,
-    select: { id: true, eventType: true, targetType: true, targetId: true, createdAt: true },
-  });
+  const [lastScan, activeScan, recentActivity] = await Promise.all([
+    prisma.scanJob.findFirst({
+      where: { deviceId: device.id, state: "SUCCEEDED" },
+      orderBy: { finishedAt: "desc" },
+      select: { id: true, state: true, appsFound: true, startedAt: true, finishedAt: true, createdAt: true },
+    }),
+    prisma.scanJob.findFirst({
+      where: { deviceId: device.id, state: { in: [...ACTIVE_SCAN_STATES] } },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, state: true },
+    }),
+    prisma.auditEvent.findMany({
+      where: { OR: [{ actorUserId: userId }, { deviceId: device.id }] },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+      select: { id: true, eventType: true, targetType: true, targetId: true, createdAt: true },
+    }),
+  ]);
 
   res.json({
     device: {
@@ -80,6 +91,7 @@ router.get("/", async (req, res) => {
     },
     totals: { applications: apps.length, updatesAvailable, upToDate, unsupported },
     lastScan,
+    activeScan,
     isStale: !lastScan?.finishedAt || Date.now() - lastScan.finishedAt.getTime() > STALE_AFTER_MS,
     recentActivity,
   });

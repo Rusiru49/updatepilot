@@ -5,6 +5,7 @@ import { prisma } from "../db";
 import { sha256 } from "../lib/auth";
 import { normalizeCode } from "../lib/devices";
 import { requireAgent } from "../middleware/requireAgent";
+import { expireStaleScans, saveScanResults, scanResultsSchema } from "../lib/scans";
 
 const router = Router();
 
@@ -92,6 +93,108 @@ router.post("/heartbeat", async (req, res) => {
 // GET /api/v1/agent/me — lets the agent check its key still works
 router.get("/me", (req, res) => {
   res.json({ device: { id: req.agent!.deviceId, deviceName: req.agent!.deviceName } });
+});
+
+const jobIdSchema = z.string().uuid();
+
+// POST /api/v1/agent/jobs/next — heartbeat + "is there any work for me?"
+router.post("/jobs/next", async (req, res) => {
+  const parsed = z.object({ agentVersion: z.string().trim().max(50).optional() }).safeParse(req.body ?? {});
+  if (!parsed.success) {
+    res.status(400).json({ error: { code: "VALIDATION_ERROR", message: "Invalid request" } });
+    return;
+  }
+  const deviceId = req.agent!.deviceId;
+  const now = new Date();
+
+  await prisma.device.update({
+    where: { id: deviceId },
+    data: {
+      lastSeenAt: now,
+      status: "ONLINE",
+      ...(parsed.data.agentVersion ? { agentVersion: parsed.data.agentVersion } : {}),
+    },
+  });
+  await expireStaleScans(deviceId);
+
+  const next = await prisma.scanJob.findFirst({ where: { deviceId, state: "QUEUED" }, orderBy: { createdAt: "asc" } });
+  if (next) {
+    // Claim it atomically, so the same job is never given out twice
+    const claimed = await prisma.scanJob.updateMany({
+      where: { id: next.id, state: "QUEUED" },
+      data: { state: "RUNNING", startedAt: now },
+    });
+    if (claimed.count === 1) {
+      res.json({ job: { id: next.id, type: "scan" } });
+      return;
+    }
+  }
+  res.status(204).end();
+});
+
+// POST /api/v1/agent/scans/:id/results — the agent sends what it found
+router.post("/scans/:id/results", async (req, res) => {
+  const id = jobIdSchema.safeParse(req.params.id);
+  const body = scanResultsSchema.safeParse(req.body);
+  if (!id.success || !body.success) {
+    res.status(400).json({
+      error: {
+        code: "VALIDATION_ERROR",
+        message: "Invalid scan results",
+        details: body.success ? [] : body.error.issues.slice(0, 5).map((i) => ({ field: i.path.join("."), issue: i.message })),
+      },
+    });
+    return;
+  }
+
+  const deviceId = req.agent!.deviceId;
+  const job = await prisma.scanJob.findFirst({ where: { id: id.data, deviceId } });
+  if (!job) {
+    res.status(404).json({ error: { code: "NOT_FOUND", message: "Scan not found" } });
+    return;
+  }
+  if (job.state !== "RUNNING") {
+    res.status(409).json({ error: { code: "JOB_NOT_RUNNING", message: `This scan is already ${job.state.toLowerCase()}` } });
+    return;
+  }
+
+  const count = await saveScanResults(job.id, deviceId, body.data.apps);
+  await prisma.auditEvent.create({
+    data: {
+      actorUserId: job.requestedById,
+      deviceId,
+      eventType: "scan.completed",
+      targetType: "scan",
+      targetId: job.id,
+      metadata: { appsFound: count, durationMs: body.data.durationMs ?? null },
+    },
+  });
+  res.status(204).end();
+});
+
+// POST /api/v1/agent/scans/:id/fail — the agent couldn't scan
+router.post("/scans/:id/fail", async (req, res) => {
+  const id = jobIdSchema.safeParse(req.params.id);
+  const body = z.object({ error: z.string().trim().min(1).max(500) }).safeParse(req.body);
+  if (!id.success || !body.success) {
+    res.status(400).json({ error: { code: "VALIDATION_ERROR", message: "Invalid request" } });
+    return;
+  }
+
+  const deviceId = req.agent!.deviceId;
+  const updated = await prisma.scanJob.updateMany({
+    where: { id: id.data, deviceId, state: "RUNNING" },
+    data: { state: "FAILED", finishedAt: new Date(), errorSummary: body.data.error },
+  });
+  if (updated.count === 0) {
+    res.status(409).json({ error: { code: "JOB_NOT_RUNNING", message: "This scan is not running" } });
+    return;
+  }
+
+  await prisma.auditEvent.create({
+    data: { deviceId, eventType: "scan.failed", targetType: "scan", targetId: id.data, metadata: { error: body.data.error } },
+  });
+  res.status(204).end();
 });
 
 export default router;

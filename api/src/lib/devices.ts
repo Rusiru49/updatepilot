@@ -22,3 +22,7 @@ export function effectiveStatus(device: { status: string; lastSeenAt: Date | nul
   const recent = device.lastSeenAt && Date.now() - device.lastSeenAt.getTime() < ONLINE_WINDOW_MS;
   return recent ? ("ONLINE" as const) : ("OFFLINE" as const);
 }
+
+// Same rule as the agent: what a real WinGet package Id looks like.
+// The server checks it again — it never trusts the agent blindly.
+export const PACKAGE_ID_RE = /^[A-Za-z0-9][A-Za-z0-9.+_-]{0,127}$/;
