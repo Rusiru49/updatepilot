@@ -88,7 +88,7 @@ describe("Data APIs: applications, dashboard, devices, history", () => {
 
   it("dashboard totals are correct", async () => {
     const res = await asAlice.get("/api/v1/dashboard").expect(200);
-    assert.deepEqual(res.body.totals, { applications: 3, updatesAvailable: 1, upToDate: 1, unsupported: 1 });
+    assert.deepEqual(res.body.totals, { applications: 3, updatesAvailable: 1, upToDate: 1, unsupported: 1, unknown: 0 });
     assert.equal(res.body.device.deviceName, "alice@test.com-PC");
   });
 

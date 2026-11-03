@@ -37,7 +37,7 @@ router.get("/", async (req, res) => {
   if (!device) {
     res.json({
       device: null,
-      totals: { applications: 0, updatesAvailable: 0, upToDate: 0, unsupported: 0 },
+      totals: { applications: 0, updatesAvailable: 0, upToDate: 0, unsupported: 0, unknown: 0 },
       lastScan: null,
       activeScan: null,
       isStale: false,
@@ -54,12 +54,13 @@ router.get("/", async (req, res) => {
   });
   const latest = await getLatestVersions(apps.map((a) => a.packageId).filter((p): p is string => !!p));
 
-  let updatesAvailable = 0, upToDate = 0, unsupported = 0;
+  let updatesAvailable = 0, upToDate = 0, unsupported = 0, unknown = 0;
   for (const a of apps) {
     const status = getUpdateStatus(a.matchStatus, a.installedVersion, a.packageId ? latest.get(a.packageId) ?? null : null);
     if (status === "update_available") updatesAvailable++;
     else if (status === "up_to_date") upToDate++;
     else if (status === "unsupported") unsupported++;
+    else unknown++; // e.g. "> 3.14.7" — can't be compared reliably
   }
 
   const [lastScan, activeScan, recentActivity] = await Promise.all([
@@ -89,7 +90,7 @@ router.get("/", async (req, res) => {
       agentVersion: device.agentVersion,
       lastSeenAt: device.lastSeenAt,
     },
-    totals: { applications: apps.length, updatesAvailable, upToDate, unsupported },
+    totals: { applications: apps.length, updatesAvailable, upToDate, unsupported, unknown },
     lastScan,
     activeScan,
     isStale: !lastScan?.finishedAt || Date.now() - lastScan.finishedAt.getTime() > STALE_AFTER_MS,

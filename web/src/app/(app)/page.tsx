@@ -94,7 +94,11 @@ export default function OverviewPage() {
       )}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Installed apps" value={data.totals.applications} hint={`${data.totals.upToDate} up to date`} />
+        <StatCard
+          label="Installed apps"
+          value={data.totals.applications}
+          hint={`${data.totals.upToDate} up to date${data.totals.unknown ? ` · ${data.totals.unknown} unknown` : ""}`}
+        />
         <StatCard
           label="Updates available"
           value={data.totals.updatesAvailable}

@@ -123,7 +123,7 @@ describe("Scan jobs: dashboard → agent → results", () => {
 
     const dash = await asAlice.get("/api/v1/dashboard").expect(200);
     assert.equal(dash.body.device.deviceName, "REAL-PC");
-    assert.deepEqual(dash.body.totals, { applications: 4, updatesAvailable: 1, upToDate: 1, unsupported: 2 });
+    assert.deepEqual(dash.body.totals, { applications: 4, updatesAvailable: 1, upToDate: 1, unsupported: 2, unknown: 0 });
     assert.equal(dash.body.activeScan, null);
   });
 
@@ -175,6 +175,25 @@ describe("Scan jobs: dashboard → agent → results", () => {
     const scan = await asAlice.get(`/api/v1/scans/${scanId}`).expect(200);
     assert.equal(scan.body.state, "FAILED");
     assert.equal(scan.body.errorSummary, "winget was not found");
+  });
+
+  it("apps with uncertain versions are counted as unknown, not guessed", async () => {
+    const scanId = await startAndClaim();
+    const launcher = scanned("Python Launcher", "Python.Launcher", "> 3.14.7", {
+      packageId: "Python.Launcher",
+      source: "winget",
+      matchStatus: "MATCHED",
+      versionUncertain: true,
+    });
+    await agentPost(`/scans/${scanId}/results`, { apps: [launcher] }).expect(204);
+
+    const dash = await asAlice.get("/api/v1/dashboard").expect(200);
+    assert.deepEqual(dash.body.totals, { applications: 1, updatesAvailable: 0, upToDate: 0, unsupported: 0, unknown: 1 });
+
+    const row = await prisma.application.findFirstOrThrow({ where: { deviceId, localId: "Python.Launcher" } });
+    const details = await asAlice.get(`/api/v1/applications/${row.id}`).expect(200);
+    assert.equal(details.body.application.versionUncertain, true);
+    assert.equal(details.body.application.updateStatus, "unknown");
   });
 
   it("an offline device can't start a scan", async () => {

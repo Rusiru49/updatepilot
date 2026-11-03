@@ -25,7 +25,7 @@ export type Dashboard = {
     agentVersion: string | null;
     lastSeenAt: string | null;
   } | null;
-  totals: { applications: number; updatesAvailable: number; upToDate: number; unsupported: number };
+  totals: { applications: number; updatesAvailable: number; upToDate: number; unsupported: number; unknown: number };
   lastScan: { id: string; state: string; appsFound: number | null; finishedAt: string | null } | null;
   activeScan: { id: string; state: JobState } | null;
   isStale: boolean;
@@ -48,6 +48,8 @@ export type AppDetails = {
     updateStatus: UpdateStatus;
     firstSeenAt: string;
     lastSeenAt: string;
+    localId: string | null;
+    versionUncertain: boolean;
   };
   device: { id: string; deviceName: string; status: string };
   latestRelease: {

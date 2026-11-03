@@ -25,6 +25,21 @@ const VERIFICATION_LABEL: Record<string, string> = {
   PENDING: "Pending",
 };
 
+const MATCH_INFO: Record<string, { label: string; text: string }> = {
+  MATCHED: {
+    label: "Trusted WinGet package",
+    text: "UpdatePilot can check this app for updates through WinGet.",
+  },
+  UNMATCHED: {
+    label: "Not matched",
+    text: "This app was installed normally, but WinGet couldn't link it to a trusted package. UpdatePilot won't guess an update command; check the publisher's website for updates.",
+  },
+  UNSUPPORTED: {
+    label: "Store / system app",
+    text: "This app is managed by the Microsoft Store or Windows Update, not WinGet, so UpdatePilot doesn't update it.",
+  },
+};
+
 export default function ApplicationDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const [data, setData] = useState<AppDetails | null>(null);
@@ -125,10 +140,22 @@ export default function ApplicationDetailsPage() {
             </Row>
             <Row label="Package ID" mono>{app.packageId ?? "—"}</Row>
             <Row label="Source">{app.source ?? "—"}</Row>
-            <Row label="Match">{matched ? "Trusted package" : app.matchStatus.toLowerCase()}</Row>
+            <Row label="Match">{MATCH_INFO[app.matchStatus].label}</Row>
+            {!app.packageId && app.localId && (
+              <Row label="WinGet Id" mono>
+                {app.localId}
+              </Row>
+            )}
             <Row label="First seen">{formatDate(app.firstSeenAt)}</Row>
             <Row label="Last seen">{timeAgo(app.lastSeenAt)}</Row>
           </dl>
+          <p className="mt-4 text-xs text-muted">{MATCH_INFO[app.matchStatus].text}</p>
+          {app.versionUncertain && (
+            <p className="mt-2 text-xs text-warning">
+              WinGet reports the installed version as &quot;{app.installedVersion}&quot;, which can&apos;t be compared
+              reliably, so the update status is unknown.
+            </p>
+          )}
         </Card>
 
         <Card>

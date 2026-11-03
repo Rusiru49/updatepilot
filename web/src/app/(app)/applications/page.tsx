@@ -5,7 +5,7 @@ import { Suspense, useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ArrowDown, ArrowUp, ArrowUpDown, Search } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
-import type { AppItem, Paged } from "@/lib/types";
+import type { AppItem, Device, Paged } from "@/lib/types";
 import { timeAgo } from "@/lib/format";
 import { Button, Card, EmptyState, ErrorState, Skeleton } from "@/components/ui";
 import { UpdateStatusBadge } from "@/components/StatusBadge";
@@ -43,12 +43,22 @@ function ApplicationsView() {
   const page = Math.max(1, Number(searchParams.get("page")) || 1);
   const sizeParam = Number(searchParams.get("pageSize"));
   const pageSize = PAGE_SIZES.includes(sizeParam) ? sizeParam : 10;
+  const deviceParam = searchParams.get("deviceId") ?? "";
+  const deviceId = /^[0-9a-f-]{36}$/i.test(deviceParam) ? deviceParam : "";
 
   const [searchInput, setSearchInput] = useState(search);
   const [data, setData] = useState<Paged<AppItem> | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [reloadKey, setReloadKey] = useState(0);
+  const [devices, setDevices] = useState<Device[]>([]);
+
+  // Load the user's computers once (for the device filter)
+  useEffect(() => {
+    api<{ items: Device[] }>("/devices")
+      .then((res) => setDevices(res.items))
+      .catch(() => setDevices([])); // the filter is optional — the page still works without it
+  }, []);
 
   function updateParams(changes: Record<string, string | number | null>) {
     const params = new URLSearchParams(searchParams.toString());
@@ -77,6 +87,7 @@ function ApplicationsView() {
     const params = new URLSearchParams({ sort, order, page: String(page), pageSize: String(pageSize) });
     if (search) params.set("search", search);
     if (matchStatus) params.set("matchStatus", matchStatus);
+    if (deviceId) params.set("deviceId", deviceId);
 
     api<Paged<AppItem>>(`/applications?${params}`)
       .then((res) => !cancelled && setData(res))
@@ -95,10 +106,10 @@ function ApplicationsView() {
 
   function clearFilters() {
     setSearchInput("");
-    updateParams({ search: null, matchStatus: null, page: null });
+    updateParams({ search: null, matchStatus: null, deviceId: null, page: null });
   }
 
-  const hasFilters = !!search || !!matchStatus;
+  const hasFilters = !!search || !!matchStatus || !!deviceId;
 
   return (
     <div className="space-y-6">
@@ -122,6 +133,22 @@ function ApplicationsView() {
             className={`${fieldClass} w-full pl-9`}
           />
         </div>
+        {devices.length > 1 && (
+          <select
+            aria-label="Filter by computer"
+            value={deviceId}
+            onChange={(e) => updateParams({ deviceId: e.target.value || null, page: null })}
+            className={fieldClass}
+          >
+            <option value="">All computers</option>
+            {devices.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.deviceName}
+                {d.status === "REVOKED" ? " (revoked)" : ""}
+              </option>
+            ))}
+          </select>
+        )}
         <select
           aria-label="Filter by match status"
           value={matchStatus}

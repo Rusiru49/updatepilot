@@ -138,6 +138,8 @@ router.get("/:id", async (req, res) => {
       updateStatus: getUpdateStatus(app.matchStatus, app.installedVersion, latestRelease?.version ?? null),
       firstSeenAt: app.firstSeenAt,
       lastSeenAt: app.lastSeenAt,
+      localId: app.localId,
+      versionUncertain: app.versionUncertain,
     },
     device: app.device,
     latestRelease: latestRelease && {
