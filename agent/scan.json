@@ -1,0 +1,987 @@
+
+> updatepilot-agent@0.1.0 scan
+> tsx src/cli.ts scan --json
+
+Scanning installed apps with winget... (this can take up to a minute)
+[
+  {
+    "displayName": "Adobe Acrobat (64-bit)",
+    "localId": "Adobe.Acrobat.Reader.64-bit",
+    "packageId": "Adobe.Acrobat.Reader.64-bit",
+    "installedVersion": "26.002.22031",
+    "availableVersion": null,
+    "source": "winget",
+    "matchStatus": "MATCHED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Adobe Acrobat Reader",
+    "localId": "MSIX\\AdobeAcrobatReaderCoreApp_26.0.0.1_x64__33qsgwvbcw8mw",
+    "packageId": null,
+    "installedVersion": "26.0.0.1",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "App Installer",
+    "localId": "Microsoft.AppInstaller",
+    "packageId": "Microsoft.AppInstaller",
+    "installedVersion": "1.29.379.0",
+    "availableVersion": "1.29.380",
+    "source": "winget",
+    "matchStatus": "MATCHED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "AV1 Video Extension",
+    "localId": "MSIX\\Microsoft.AV1VideoExtension_2.0.35.0_x64__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "2.0.35.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "AVC Encoder Video Extension",
+    "localId": "MSIX\\Microsoft.AVCEncoderVideoExtension_1.1.47.0_x64__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "1.1.47.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Claude",
+    "localId": "Anthropic.Claude",
+    "packageId": "Anthropic.Claude",
+    "installedVersion": "3.6556.2.0",
+    "availableVersion": null,
+    "source": "winget",
+    "matchStatus": "MATCHED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Copilot",
+    "localId": "ARP\\Machine\\X86\\Microsoft Copilot",
+    "packageId": null,
+    "installedVersion": "156.0.4314.58",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNMATCHED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Copilot",
+    "localId": "Microsoft.365Copilot",
+    "packageId": "Microsoft.365Copilot",
+    "installedVersion": "156.0.4314.58",
+    "availableVersion": null,
+    "source": "winget",
+    "matchStatus": "MATCHED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Core Temp 1.21",
+    "localId": "ALCPU.CoreTemp",
+    "packageId": "ALCPU.CoreTemp",
+    "installedVersion": "1.21",
+    "availableVersion": null,
+    "source": "winget",
+    "matchStatus": "MATCHED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Dev Home",
+    "localId": "MSIX\\Microsoft.Windows.DevHome_0.0.0.0_x64__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "0.0.0.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Dirac Audio Manager",
+    "localId": "MSIX\\DrivewintechTechnologyCo.DiracAudoManager_3.0.9.0_x64__e7q8crqfywnwm",
+    "packageId": null,
+    "installedVersion": "3.0.9.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "DMS version 2.2.1",
+    "localId": "ARP\\Machine\\X64\\{B8C6E9E2-1B4E-4F2E-9D91-7E1A4B1D2A10}_is1",
+    "packageId": null,
+    "installedVersion": "2.2.1",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNMATCHED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Feedback Hub",
+    "localId": "MSIX\\Microsoft.WindowsFeedbackHub_2.2609.102.0_x64__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "2.2609.102.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Game Bar",
+    "localId": "MSIX\\Microsoft.XboxGamingOverlay_7.326.10141.0_x64__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "7.326.10141.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Game Speech Window",
+    "localId": "MSIX\\Microsoft.XboxSpeechToTextOverlay_1.123.11001.0_x64__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "1.123.11001.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Get Help",
+    "localId": "MSIX\\Microsoft.GetHelp_10.2409.42652.0_x64__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "10.2409.42652.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Git",
+    "localId": "Git.Git",
+    "packageId": "Git.Git",
+    "installedVersion": "2.56.0.2",
+    "availableVersion": "2.56.0.4",
+    "source": "winget",
+    "matchStatus": "MATCHED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Google Chrome",
+    "localId": "ARP\\Machine\\X86\\Google Chrome",
+    "packageId": null,
+    "installedVersion": "156.0.8078.80",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNMATCHED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "HEIF Image Extension",
+    "localId": "MSIX\\Microsoft.HEIFImageExtension_1.2.62.0_x64__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "1.2.62.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "HEVC Video Extensions from Device Manufacturer",
+    "localId": "MSIX\\Microsoft.HEVCVideoExtension_2.5.48.0_x64__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "2.5.48.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "HWiNFO® 64",
+    "localId": "REALiX.HWiNFO",
+    "packageId": "REALiX.HWiNFO",
+    "installedVersion": "8.54",
+    "availableVersion": null,
+    "source": "winget",
+    "matchStatus": "MATCHED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Instagram",
+    "localId": "MSIX\\Facebook.InstagramBeta_42.0.23.0_neutral__8xx8rvfyw5nnt",
+    "packageId": null,
+    "installedVersion": "42.0.23.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "KMPlayer (remove only)",
+    "localId": "ARP\\Machine\\X86\\The KMPlayer",
+    "packageId": null,
+    "installedVersion": "4.2.3.38",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNMATCHED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Local AI Manager for Microsoft 365",
+    "localId": "MSIX\\aimgr_0.20.63.0_x64__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "0.20.63.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Microsoft .Net Native Framework Package 2.2",
+    "localId": "MSIX\\Microsoft.NET.Native.Framework.2.2_2.2.29512.0_x64__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "2.2.29512.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Microsoft .Net Native Framework Package 2.2",
+    "localId": "MSIX\\Microsoft.NET.Native.Framework.2.2_2.2.29512.0_x86__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "2.2.29512.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Microsoft .Net Native Runtime Package 2.2",
+    "localId": "Microsoft.DotNet.Native.Runtime",
+    "packageId": "Microsoft.DotNet.Native.Runtime",
+    "installedVersion": "2.2.28604.0",
+    "availableVersion": null,
+    "source": "winget",
+    "matchStatus": "MATCHED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Microsoft Bing",
+    "localId": "MSIX\\Microsoft.BingSearch_1.1.43.0_x64__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "1.1.43.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Microsoft Clipchamp",
+    "localId": "MSIX\\Clipchamp.Clipchamp_4.7.10220.0_x64__yxz26nhyzhsrt",
+    "packageId": null,
+    "installedVersion": "4.7.10220.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Microsoft Edge",
+    "localId": "Microsoft.Edge",
+    "packageId": "Microsoft.Edge",
+    "installedVersion": "156.0.4314.58",
+    "availableVersion": null,
+    "source": "winget",
+    "matchStatus": "MATCHED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Microsoft Edge",
+    "localId": "MSIX\\Microsoft.MicrosoftEdge.Stable_152.0.4191.66_neutral__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "152.0.4191.66",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Microsoft News",
+    "localId": "MSIX\\Microsoft.BingNews_1.0.2.0_x64__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "1.0.2.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Microsoft Office Professional Plus 2024 - en-us",
+    "localId": "ARP\\Machine\\X64\\ProPlus2024Retail - en-us",
+    "packageId": null,
+    "installedVersion": "16.0.20527.20112",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNMATCHED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Microsoft OneDrive",
+    "localId": "Microsoft.OneDrive",
+    "packageId": "Microsoft.OneDrive",
+    "installedVersion": "26.195.1006.0007",
+    "availableVersion": null,
+    "source": "winget",
+    "matchStatus": "MATCHED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Microsoft Photos",
+    "localId": "MSIX\\Microsoft.Windows.Photos_2026.11090.22001.0_x64__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "2026.11090.22001.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Microsoft Sticky Notes",
+    "localId": "MSIX\\Microsoft.MicrosoftStickyNotes_4.0.6105.0_x64__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "4.0.6105.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Microsoft Store",
+    "localId": "MSIX\\Microsoft.WindowsStore_22609.1401.8.0_x64__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "22609.1401.8.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Microsoft Teams",
+    "localId": "Microsoft.Teams",
+    "packageId": "Microsoft.Teams",
+    "installedVersion": "26260.1717.5229.7049",
+    "availableVersion": "26276.513.5241.9675",
+    "source": "winget",
+    "matchStatus": "MATCHED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Microsoft Teams Meeting Add-in for Microsoft Office",
+    "localId": "ARP\\Machine\\X64\\{A7AB73A3-CB10-4AA5-9D38-6AEFFBDE4C91}",
+    "packageId": null,
+    "installedVersion": "1.26.25904",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNMATCHED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Microsoft To Do",
+    "localId": "MSIX\\Microsoft.Todos_0.178.8571.0_x64__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "0.178.8571.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Microsoft Visual C++ 2010  x86 Redistributable - 10.0.30319",
+    "localId": "Microsoft.VCRedist.2010.x86",
+    "packageId": "Microsoft.VCRedist.2010.x86",
+    "installedVersion": "10.0.30319",
+    "availableVersion": "10.0.40219",
+    "source": "winget",
+    "matchStatus": "MATCHED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Microsoft Visual C++ 2015 UWP Desktop Runtime Package",
+    "localId": "Microsoft.VCLibs.Desktop.14",
+    "packageId": "Microsoft.VCLibs.Desktop.14",
+    "installedVersion": "14.0.33728.0",
+    "availableVersion": null,
+    "source": "winget",
+    "matchStatus": "MATCHED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Microsoft Visual C++ 2015 UWP Runtime Package",
+    "localId": "Microsoft.VCLibs.14",
+    "packageId": "Microsoft.VCLibs.14",
+    "installedVersion": "14.0.33519.0",
+    "availableVersion": null,
+    "source": "winget",
+    "matchStatus": "MATCHED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Microsoft Visual C++ v14 Redistributable (x64) - 14.50.35719",
+    "localId": "Microsoft.VCRedist.2015+.x64",
+    "packageId": "Microsoft.VCRedist.2015+.x64",
+    "installedVersion": "14.50.35719.0",
+    "availableVersion": "14.51.36247.0",
+    "source": "winget",
+    "matchStatus": "MATCHED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Microsoft Visual C++ v14 Redistributable (x86) - 14.50.35719",
+    "localId": "Microsoft.VCRedist.2015+.x86",
+    "packageId": "Microsoft.VCRedist.2015+.x86",
+    "installedVersion": "14.50.35719.0",
+    "availableVersion": "14.51.36247.0",
+    "source": "winget",
+    "matchStatus": "MATCHED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Microsoft Visual Studio Code (User)",
+    "localId": "Microsoft.VisualStudioCode",
+    "packageId": "Microsoft.VisualStudioCode",
+    "installedVersion": "1.144.1",
+    "availableVersion": null,
+    "source": "winget",
+    "matchStatus": "MATCHED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Microsoft Windows Application Compatibility Fix Database",
+    "localId": "ARP\\Machine\\X64\\{22221111-1111-1111-1111-111111111111}.sdb",
+    "packageId": null,
+    "installedVersion": "Unknown",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNMATCHED",
+    "versionUncertain": true
+  },
+  {
+    "displayName": "Microsoft.Office.ActionsServer",
+    "localId": "MSIX\\Microsoft.Office.ActionsServer_16.0.20527.20112_neutral__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "16.0.20527.20112",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Microsoft.UI.Xaml.2.8",
+    "localId": "Microsoft.UI.Xaml.2.8",
+    "packageId": "Microsoft.UI.Xaml.2.8",
+    "installedVersion": "8.2511.26001.0",
+    "availableVersion": null,
+    "source": "winget",
+    "matchStatus": "MATCHED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Microsoft.UI.Xaml.2.8",
+    "localId": "Microsoft.UI.Xaml.2.8",
+    "packageId": "Microsoft.UI.Xaml.2.8",
+    "installedVersion": "8.2501.31001.0",
+    "availableVersion": null,
+    "source": "winget",
+    "matchStatus": "MATCHED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Mobile devices",
+    "localId": "MSIX\\MicrosoftWindows.CrossDevice_0.26092.74.0_x64__cw5n1h2txyewy",
+    "packageId": null,
+    "installedVersion": "0.26092.74.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "MPEG-2 Video Extension",
+    "localId": "MSIX\\Microsoft.MPEG2VideoExtension_1.2.32.0_x64__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "1.2.32.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "MSN Weather",
+    "localId": "MSIX\\Microsoft.BingWeather_4.54.63045.0_x64__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "4.54.63045.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Node.js",
+    "localId": "OpenJS.NodeJS.LTS",
+    "packageId": "OpenJS.NodeJS.LTS",
+    "installedVersion": "24.22.1",
+    "availableVersion": "26.13.0",
+    "source": "winget",
+    "matchStatus": "MATCHED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "OfficePushNotificationsUtility",
+    "localId": "MSIX\\Microsoft.OfficePushNotificationUtility_16.0.20527.20112_neutral__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "16.0.20527.20112",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "OneDrive",
+    "localId": "MSIX\\Microsoft.OneDriveSync_26195.1006.7.0_neutral__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "26195.1006.7.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Outlook for Windows",
+    "localId": "Microsoft.Outlook",
+    "packageId": "Microsoft.Outlook",
+    "installedVersion": "1.2026.1001.200",
+    "availableVersion": null,
+    "source": "winget",
+    "matchStatus": "MATCHED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Paint",
+    "localId": "MSIX\\Microsoft.Paint_11.2605.81.0_x64__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "11.2605.81.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Phone Link",
+    "localId": "MSIX\\Microsoft.YourPhone_0.26082.121.0_x64__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "0.26082.121.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "PostgreSQL 18",
+    "localId": "PostgreSQL.PostgreSQL.18",
+    "packageId": "PostgreSQL.PostgreSQL.18",
+    "installedVersion": "18.6-5",
+    "availableVersion": null,
+    "source": "winget",
+    "matchStatus": "MATCHED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Power Automate",
+    "localId": "MSIX\\Microsoft.PowerAutomateDesktop_1.0.2159.0_x64__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "1.0.2159.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Python 3.15.0 (64-bit)",
+    "localId": "ARP\\User\\X64\\{c7d15cec-c713-485e-96e3-2c16dadd28a1}",
+    "packageId": null,
+    "installedVersion": "3.15.150.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNMATCHED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Python Launcher",
+    "localId": "Python.Launcher",
+    "packageId": "Python.Launcher",
+    "installedVersion": "> 3.14.7",
+    "availableVersion": null,
+    "source": "winget",
+    "matchStatus": "MATCHED",
+    "versionUncertain": true
+  },
+  {
+    "displayName": "Quick Assist",
+    "localId": "MSIX\\MicrosoftCorporationII.QuickAssist_2.0.56.0_x64__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "2.0.56.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Raw Image Extension",
+    "localId": "MSIX\\Microsoft.RawImageExtension_2.5.42.0_x64__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "2.5.42.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Realtek Audio Control",
+    "localId": "MSIX\\RealtekSemiconductorCorp.RealtekAudioControl_1.53.373.0_x64__dt26b99r8h8gj",
+    "packageId": null,
+    "installedVersion": "1.53.373.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Snipping Tool",
+    "localId": "MSIX\\Microsoft.ScreenSketch_11.2608.41.0_x64__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "11.2608.41.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Solitaire & Casual Games",
+    "localId": "MSIX\\Microsoft.MicrosoftSolitaireCollection_4.27.9181.0_x64__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "4.27.9181.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Start Experiences App",
+    "localId": "MSIX\\Microsoft.StartExperiencesApp_1.398.4.0_x64__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "1.398.4.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Store Experience Host",
+    "localId": "MSIX\\Microsoft.StorePurchaseApp_22609.1401.1.0_x64__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "22609.1401.1.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Visual Studio Code",
+    "localId": "MSIX\\Microsoft.VisualStudioCode_1.0.144.1_neutral__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "1.0.144.1",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "VLC media player",
+    "localId": "VideoLAN.VLC",
+    "packageId": "VideoLAN.VLC",
+    "installedVersion": "3.0.23",
+    "availableVersion": "3.0.24",
+    "source": "winget",
+    "matchStatus": "MATCHED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "VP9 Video Extensions",
+    "localId": "MSIX\\Microsoft.VP9VideoExtensions_1.2.20.0_x64__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "1.2.20.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Web Media Extensions",
+    "localId": "MSIX\\Microsoft.WebMediaExtensions_2.1.51.0_x64__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "2.1.51.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "WebP Image Extension",
+    "localId": "MSIX\\Microsoft.WebpImageExtension_1.2.31.0_x64__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "1.2.31.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "WhatsApp",
+    "localId": "MSIX\\5319275A.WhatsAppDesktop_2.2641.101.0_x64__cv1g1gvanyjgm",
+    "packageId": null,
+    "installedVersion": "2.2641.101.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Widgets Platform Runtime",
+    "localId": "MSIX\\Microsoft.WidgetsPlatformRuntime_1.6.19.0_x64__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "1.6.19.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "WinAppRuntime.Main.2",
+    "localId": "MSIX\\MicrosoftCorporationII.WinAppRuntime.Main.2_2.6.4.0_x64__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "2.6.4.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "WinAppRuntime.Singleton",
+    "localId": "MSIX\\MicrosoftCorporationII.WinAppRuntime.Singleton_8002.5.1.0_x64__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "8002.5.1.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Windows Application Compatibility Enhancements",
+    "localId": "MSIX\\Microsoft.ApplicationCompatibilityEnhancements_1.2511.9.0_x64__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "1.2511.9.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Windows Calculator",
+    "localId": "MSIX\\Microsoft.WindowsCalculator_11.2607.0.0_x64__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "11.2607.0.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Windows Camera",
+    "localId": "MSIX\\Microsoft.WindowsCamera_2026.2608.1.0_x64__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "2026.2608.1.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Windows Clock",
+    "localId": "MSIX\\Microsoft.WindowsAlarms_11.2607.6.0_x64__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "11.2607.6.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Windows Media Player",
+    "localId": "MSIX\\Microsoft.ZuneMusic_11.2609.11.0_x64__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "11.2609.11.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Windows Notepad",
+    "localId": "MSIX\\Microsoft.WindowsNotepad_11.2607.14.0_x64__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "11.2607.14.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Windows Package Manager Source (winget) V2",
+    "localId": "MSIX\\Microsoft.Winget.Source_2026.1103.527.27_neutral__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "2026.1103.527.27",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Windows Security",
+    "localId": "MSIX\\Microsoft.SecHealthUI_1000.29680.1000.0_x64__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "1000.29680.1000.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Windows Sound Recorder",
+    "localId": "MSIX\\Microsoft.WindowsSoundRecorder_11.2607.1.0_x64__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "11.2607.1.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Windows Terminal",
+    "localId": "Microsoft.WindowsTerminal",
+    "packageId": "Microsoft.WindowsTerminal",
+    "installedVersion": "1.24.12741.0",
+    "availableVersion": "1.25.2733.0",
+    "source": "winget",
+    "matchStatus": "MATCHED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Windows Web Experience Pack",
+    "localId": "MSIX\\MicrosoftWindows.Client.WebExperience_526.21100.40.0_x64__cw5n1h2txyewy",
+    "packageId": null,
+    "installedVersion": "526.21100.40.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "WindowsAppRuntime.1.7",
+    "localId": "Microsoft.WindowsAppRuntime.1.7",
+    "packageId": "Microsoft.WindowsAppRuntime.1.7",
+    "installedVersion": "1.7.9",
+    "availableVersion": null,
+    "source": "winget",
+    "matchStatus": "MATCHED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "WindowsAppRuntime.1.8",
+    "localId": "Microsoft.WindowsAppRuntime.1.8",
+    "packageId": "Microsoft.WindowsAppRuntime.1.8",
+    "installedVersion": "> 1.8.10",
+    "availableVersion": null,
+    "source": "winget",
+    "matchStatus": "MATCHED",
+    "versionUncertain": true
+  },
+  {
+    "displayName": "WindowsAppRuntime.2",
+    "localId": "Microsoft.WindowsAppRuntime.2",
+    "packageId": "Microsoft.WindowsAppRuntime.2",
+    "installedVersion": "2.6.4.0",
+    "availableVersion": null,
+    "source": "winget",
+    "matchStatus": "MATCHED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "WinRAR",
+    "localId": "MSIX\\WinRAR.ShellExtension_1.0.0.2_x64__d9ma7nkbkv4rp",
+    "packageId": null,
+    "installedVersion": "1.0.0.2",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "WinRAR 7.23 (64-bit)",
+    "localId": "RARLab.WinRAR",
+    "packageId": "RARLab.WinRAR",
+    "installedVersion": "7.23.0",
+    "availableVersion": null,
+    "source": "winget",
+    "matchStatus": "MATCHED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "XBOX",
+    "localId": "MSIX\\Microsoft.GamingApp_2611.1001.10.0_x64__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "2611.1001.10.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Xbox Identity Provider",
+    "localId": "MSIX\\Microsoft.XboxIdentityProvider_12.130.16001.0_x64__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "12.130.16001.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  },
+  {
+    "displayName": "Xbox TCUI",
+    "localId": "MSIX\\Microsoft.Xbox.TCUI_1.24.10001.0_x64__8wekyb3d8bbwe",
+    "packageId": null,
+    "installedVersion": "1.24.10001.0",
+    "availableVersion": null,
+    "source": null,
+    "matchStatus": "UNSUPPORTED",
+    "versionUncertain": false
+  }
+]

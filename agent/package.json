@@ -4,11 +4,13 @@
   "private": true,
   "description": "UpdatePilot Windows agent",
   "type": "module",
-  "scripts": {
+    "scripts": {
     "start": "tsx src/index.ts",
     "pair": "tsx src/cli.ts pair",
     "status": "tsx src/cli.ts status",
-    "unpair": "tsx src/cli.ts unpair"
+    "unpair": "tsx src/cli.ts unpair",
+    "scan": "tsx src/cli.ts scan",
+    "test": "tsx --test src/tests/winget.test.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
