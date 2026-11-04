@@ -9,6 +9,7 @@ import type { AppDetails } from "@/lib/types";
 import { formatDate, formatDateTime, safeUrl, timeAgo } from "@/lib/format";
 import { Badge, Banner, Button, Card, EmptyState, ErrorState, Skeleton, type Tone } from "@/components/ui";
 import { JobStateBadge, UpdateStatusBadge } from "@/components/StatusBadge";
+import { UpdateDialog } from "@/components/UpdateDialog";
 
 const SEVERITY_TONE: Record<string, Tone> = {
   CRITICAL: "danger",
@@ -45,6 +46,7 @@ export default function ApplicationDetailsPage() {
   const [data, setData] = useState<AppDetails | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showUpdate, setShowUpdate] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -123,9 +125,7 @@ export default function ApplicationDetailsPage() {
         )}
 
         {app.updateStatus === "update_available" && latestRelease && (
-          <Button disabled title="Updating is built in Week 4">
-            Update to {latestRelease.version}
-          </Button>
+          <Button onClick={() => setShowUpdate(true)}>Update to {latestRelease.version}</Button>
         )}
       </Card>
 
@@ -276,6 +276,7 @@ export default function ApplicationDetailsPage() {
           )}
         </Card>
       </div>
+      {showUpdate && <UpdateDialog applicationId={app.id} onClose={() => setShowUpdate(false)} />}
     </div>
   );
 }

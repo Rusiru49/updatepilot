@@ -78,6 +78,7 @@ model User {
   auditEvents AuditEvent[]
   sessions    Session[]
   pairingCodes PairingCode[]
+  updatePreviews UpdatePreview[]
 
   @@map("users")
 }
@@ -154,6 +155,7 @@ model Application {
 
   updateJobs UpdateJob[]
   snapshots  AppSnapshot[]
+  previews   UpdatePreview[]
 
   @@index([deviceId])
   @@index([packageId])
@@ -294,4 +296,23 @@ model PairingCode {
 
   @@index([userId])
   @@map("pairing_codes")
+}
+
+// "The user reviewed THIS exact update" — one-time token, only its hash is stored
+model UpdatePreview {
+  id            String      @id @default(uuid()) @db.Uuid
+  tokenHash     String      @unique
+  userId        String      @db.Uuid
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  applicationId String      @db.Uuid
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  packageId     String
+  fromVersion   String
+  targetVersion String
+  expiresAt     DateTime
+  usedAt        DateTime?
+  createdAt     DateTime    @default(now())
+
+  @@index([applicationId])
+  @@map("update_previews")
 }

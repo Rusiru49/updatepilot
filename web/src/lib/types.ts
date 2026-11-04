@@ -104,3 +104,13 @@ export type Device = {
   createdAt: string;
   applicationCount: number;
 };
+
+export type UpdatePreview = {
+  previewToken: string;
+  expiresAt: string;
+  application: { id: string; displayName: string; packageId: string; source: string };
+  device: { id: string; deviceName: string; online: boolean };
+  fromVersion: string;
+  targetVersion: string;
+  warnings: string[];
+};

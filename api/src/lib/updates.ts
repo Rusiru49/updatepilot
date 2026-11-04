@@ -1,4 +1,5 @@
 import { prisma } from "../db";
+import { compareVersions } from "./version";
 
 export type UpdateStatus = "update_available" | "up_to_date" | "unsupported" | "unknown";
 
@@ -17,6 +18,8 @@ export async function getLatestVersions(packageIds: string[]) {
 }
 
 
+// Uses real version comparison: 1.10 is newer than 1.9, and an "available"
+// version that is actually OLDER never counts as an update.
 export function getUpdateStatus(
   matchStatus: string,
   installedVersion: string | null,
@@ -24,5 +27,7 @@ export function getUpdateStatus(
 ): UpdateStatus {
   if (matchStatus !== "MATCHED") return "unsupported";
   if (!installedVersion || !availableVersion) return "unknown";
-  return availableVersion !== installedVersion ? "update_available" : "up_to_date";
+  const c = compareVersions(availableVersion, installedVersion);
+  if (c === null) return "unknown"; // can't compare safely → don't guess
+  return c === 1 ? "update_available" : "up_to_date";
 }

@@ -10,6 +10,7 @@ import devicesRouter from "./routes/devices";
 import historyRouter from "./routes/history";
 import agentRouter from "./routes/agent";
 import scansRouter from "./routes/scans";
+import updatesRouter from "./routes/updates";
 
 const app = express();
 
@@ -49,6 +50,7 @@ app.use("/api/v1/dashboard", dashboardRouter);
 app.use("/api/v1/devices", devicesRouter);
 app.use("/api/v1/history", historyRouter);
 app.use("/api/v1/scans", scansRouter);
+app.use("/api/v1/updates", updatesRouter);
 app.use("/api/v1/agent/pair", pairLimiter);
 app.use("/api/v1/agent", agentRouter);
 
