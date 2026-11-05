@@ -201,6 +201,7 @@ model AppSnapshot {
 model UpdateJob {
   id                 String             @id @default(uuid()) @db.Uuid
   applicationId      String             @db.Uuid
+  packageId          String?            // exactly what the user approved
   application        Application        @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   deviceId           String             @db.Uuid
   device             Device             @relation(fields: [deviceId], references: [id], onDelete: Cascade)

@@ -114,3 +114,20 @@ export type UpdatePreview = {
   targetVersion: string;
   warnings: string[];
 };
+
+export type UpdateJobStatus = {
+  id: string;
+  state: JobState;
+  applicationId: string;
+  displayName: string;
+  packageId: string | null;
+  fromVersion: string;
+  targetVersion: string;
+  exitCode: number | null;
+  verifiedVersion: string | null;
+  verificationResult: "PENDING" | "VERIFIED" | "MISMATCH" | "NOT_CHECKED";
+  errorMessage: string | null;
+  createdAt: string;
+  startedAt: string | null;
+  finishedAt: string | null;
+};

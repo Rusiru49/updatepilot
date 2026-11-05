@@ -22,6 +22,7 @@ const ACTIVITY_LABELS: Record<string, string> = {
   "device.paired": "Device paired",
   "device.revoked": "Device revoked",
   "pairing_code.created": "Pairing code created",
+  "update.requested": "Update requested",
 };
 
 export const activityLabel = (eventType: string) => ACTIVITY_LABELS[eventType] ?? eventType;
@@ -41,4 +42,10 @@ export function formatDateTime(iso: string | null | undefined) {
 // Only allow safe https links from data (never "javascript:" etc.)
 export function safeUrl(url: string | null | undefined) {
   return url && url.startsWith("https://") ? url : null;
+}
+
+// 1603 stays 1603; WinGet codes like -1978335999 show as 0x8A150101
+export function formatExitCode(code: number | null): string {
+  if (code === null) return "none";
+  return code >= 0 && code <= 0xffff ? String(code) : `0x${(code >>> 0).toString(16).toUpperCase()}`;
 }

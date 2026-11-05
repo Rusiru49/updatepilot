@@ -6,6 +6,7 @@ import { sha256 } from "../lib/auth";
 import { normalizeCode } from "../lib/devices";
 import { requireAgent } from "../middleware/requireAgent";
 import { expireStaleScans, saveScanResults, scanResultsSchema } from "../lib/scans";
+import { expireStaleUpdates, saveUpdateResult } from "../lib/updates";
 
 const router = Router();
 
@@ -117,6 +118,32 @@ router.post("/jobs/next", async (req, res) => {
   });
   await expireStaleScans(deviceId);
 
+    await expireStaleUpdates(deviceId);
+
+  // Updates first — a user is watching the progress
+  const nextUpdate = await prisma.updateJob.findFirst({
+    where: { deviceId, state: "QUEUED" },
+    orderBy: { createdAt: "asc" },
+  });
+  if (nextUpdate?.packageId) {
+    const claimed = await prisma.updateJob.updateMany({
+      where: { id: nextUpdate.id, state: "QUEUED" },
+      data: { state: "RUNNING", startedAt: now },
+    });
+    if (claimed.count === 1) {
+      res.json({
+        job: {
+          id: nextUpdate.id,
+          type: "update",
+          packageId: nextUpdate.packageId,
+          fromVersion: nextUpdate.fromVersion,
+          targetVersion: nextUpdate.targetVersion,
+        },
+      });
+      return;
+    }
+  }
+
   const next = await prisma.scanJob.findFirst({ where: { deviceId, state: "QUEUED" }, orderBy: { createdAt: "asc" } });
   if (next) {
     // Claim it atomically, so the same job is never given out twice
@@ -195,6 +222,55 @@ router.post("/scans/:id/fail", async (req, res) => {
     data: { deviceId, eventType: "scan.failed", targetType: "scan", targetId: id.data, metadata: { error: body.data.error } },
   });
   res.status(204).end();
+});
+
+// POST /api/v1/agent/updates/:id/progress — "installer finished, now verifying"
+router.post("/updates/:id/progress", async (req, res) => {
+  const id = jobIdSchema.safeParse(req.params.id);
+  const body = z.object({ state: z.literal("VERIFYING") }).safeParse(req.body);
+  if (!id.success || !body.success) {
+    res.status(400).json({ error: { code: "VALIDATION_ERROR", message: "Invalid request" } });
+    return;
+  }
+  const updated = await prisma.updateJob.updateMany({
+    where: { id: id.data, deviceId: req.agent!.deviceId, state: "RUNNING" },
+    data: { state: "VERIFYING" },
+  });
+  if (updated.count === 0) {
+    res.status(409).json({ error: { code: "JOB_NOT_RUNNING", message: "This update is not running" } });
+    return;
+  }
+  res.status(204).end();
+});
+
+// POST /api/v1/agent/updates/:id/result — what happened, plus the VERIFIED version
+const updateResultSchema = z.object({
+  exitCode: z.number().int().nullable(),
+  restartRequired: z.boolean(),
+  verifiedVersion: z.string().trim().min(1).max(100).nullable(),
+  error: z.string().trim().max(500).nullable(),
+});
+
+router.post("/updates/:id/result", async (req, res) => {
+  const id = jobIdSchema.safeParse(req.params.id);
+  const body = updateResultSchema.safeParse(req.body);
+  if (!id.success || !body.success) {
+    res.status(400).json({ error: { code: "VALIDATION_ERROR", message: "Invalid update result" } });
+    return;
+  }
+
+  const job = await prisma.updateJob.findFirst({ where: { id: id.data, deviceId: req.agent!.deviceId } });
+  if (!job) {
+    res.status(404).json({ error: { code: "NOT_FOUND", message: "Update not found" } });
+    return;
+  }
+  if (job.state !== "RUNNING" && job.state !== "VERIFYING") {
+    res.status(409).json({ error: { code: "JOB_NOT_RUNNING", message: `This update is already ${job.state.toLowerCase()}` } });
+    return;
+  }
+
+  const state = await saveUpdateResult(job.id, body.data);
+  res.json({ state }); // tells the agent what the server decided
 });
 
 export default router;

@@ -31,6 +31,8 @@ const ELLIPSIS = "…";
 // What a real WinGet package Id looks like: Git.Git, Notepad++.Notepad++, Microsoft.VCRedist.2015+.x64
 // Only Ids that pass this check can ever be used for updates (Week 4) — protects against command injection.
 export const PACKAGE_ID_RE = /^[A-Za-z0-9][A-Za-z0-9.+_-]{0,127}$/;
+// What a version we are willing to pass to winget looks like: 3.0.24, 26276.513.5241.9675, 18.6-5
+export const VERSION_RE = /^[0-9][0-9A-Za-z.+_-]{0,63}$/;
 
 const isCutOff = (value: string) => value.endsWith(ELLIPSIS) || value.endsWith("...");
 
@@ -161,25 +163,37 @@ export function restoreCutOffIds(apps: InstalledApp[], exported: ExportedPackage
 
 /* ───────────── 5. Run winget (fixed commands only) ───────────── */
 
-const WINGET_TIMEOUT_MS = 120_000;
+const WINGET_TIMEOUT_MS = 120_000; // list / export
+const UPGRADE_TIMEOUT_MS = 10 * 60 * 1000; // an installer can take a while
 
 // The ONLY winget commands this agent runs. The arguments are fixed here —
 // nothing from the server or the network is ever added to them.
 const COMMANDS = {
   list: () => ["list", "--accept-source-agreements"],
   export: (file: string) => ["export", "--output", file, "--include-versions", "--accept-source-agreements"],
+  // Exactly the package and version the user approved, from the winget source only
+  upgrade: (packageId: string, version: string) => [
+    "upgrade",
+    "--id", packageId,
+    "--exact",
+    "--version", version,
+    "--source", "winget",
+    "--silent",
+    "--accept-package-agreements",
+    "--accept-source-agreements",
+  ],
 };
 
-function runWinget(args: string[]): Promise<{ stdout: string; exitCode: number }> {
-  return new Promise((resolve, reject) => {
+function runWinget(args: string[], timeoutMs = WINGET_TIMEOUT_MS): Promise<{ stdout: string; exitCode: number }> {
+    return new Promise((resolve, reject) => {
     // shell: false → arguments go straight to winget.exe, never through cmd.exe
     const child = spawn("winget", args, { windowsHide: true, shell: false });
     const chunks: Buffer[] = [];
 
     const timer = setTimeout(() => {
       child.kill();
-      reject(new WingetError("TIMEOUT", "winget took longer than 2 minutes"));
-    }, WINGET_TIMEOUT_MS);
+      reject(new WingetError("TIMEOUT", `winget took longer than ${Math.round(timeoutMs / 60000)} minutes`));
+    }, timeoutMs);
 
     child.stdout.on("data", (c: Buffer) => chunks.push(c));
     child.stderr.resume(); // ignore warnings, but don't let the pipe fill up
@@ -195,7 +209,8 @@ function runWinget(args: string[]): Promise<{ stdout: string; exitCode: number }
 
     child.on("close", (code) => {
       clearTimeout(timer);
-      resolve({ stdout: Buffer.concat(chunks).toString("utf8"), exitCode: code ?? -1 });
+      // Windows exit codes are 32-bit; keep them as signed numbers (e.g. 0x8A150101 → -1978335999)
+      resolve({ stdout: Buffer.concat(chunks).toString("utf8"), exitCode: (code ?? -1) | 0 });
     });
   });
 }
@@ -235,4 +250,38 @@ export function summarize(apps: InstalledApp[]) {
     unsupported: apps.filter((a) => a.matchStatus === "UNSUPPORTED").length,
     updatesAvailable: apps.filter((a) => a.matchStatus === "MATCHED" && a.availableVersion).length,
   };
+}
+
+/* ───────────── 6. Update one package (Week 4) ───────────── */
+
+// The last meaningful lines of winget's output, to explain a failure
+export function lastMessage(stdout: string): string {
+  return cleanLines(stdout)
+    .map((l) => l.trim())
+    .filter((l) => /[A-Za-z]{3,}/.test(l)) // skip progress bars and spinners
+    .slice(-2)
+    .join(" ")
+    .slice(0, 300);
+}
+
+export function buildUpgradeArgs(packageId: string, version: string): string[] {
+  // Checked again here, right before running — nothing unsafe ever reaches winget
+  if (!PACKAGE_ID_RE.test(packageId)) throw new WingetError("FAILED", `Refusing to update an invalid package Id: ${packageId}`);
+  if (!VERSION_RE.test(version)) throw new WingetError("FAILED", `Refusing to update to an invalid version: ${version}`);
+  return COMMANDS.upgrade(packageId, version);
+}
+
+export async function upgradePackage(packageId: string, version: string): Promise<{ exitCode: number; output: string }> {
+  const result = await runWinget(buildUpgradeArgs(packageId, version), UPGRADE_TIMEOUT_MS);
+  return { exitCode: result.exitCode, output: lastMessage(result.stdout) };
+}
+
+// After an update: scan again and read the version that is REALLY installed now
+export async function verifyInstalledVersion(packageId: string): Promise<string | null> {
+  const { apps } = await scanInstalledApps();
+  const versions = apps
+    .filter((a) => a.packageId === packageId && !a.versionUncertain)
+    .map((a) => a.installedVersion)
+    .sort((a, b) => b.localeCompare(a, undefined, { numeric: true })); // highest first
+  return versions[0] ?? null;
 }

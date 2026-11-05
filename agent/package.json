@@ -10,7 +10,7 @@
     "status": "tsx src/cli.ts status",
     "unpair": "tsx src/cli.ts unpair",
     "scan": "tsx src/cli.ts scan",
-    "test": "tsx --test src/tests/winget.test.ts"
+    "test": "tsx --test src/tests/winget.test.ts src/tests/update.test.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
