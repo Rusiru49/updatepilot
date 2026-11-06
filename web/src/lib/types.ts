@@ -77,6 +77,7 @@ export type AppDetails = {
     exitCode: number | null;
     createdAt: string;
     finishedAt: string | null;
+    errorMessage: string | null;
   }[];
 };
 

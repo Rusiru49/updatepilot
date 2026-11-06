@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { AlertTriangle, Check, Loader2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { AlertTriangle, Check, Loader2, RotateCcw } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import type { UpdateJobStatus, UpdatePreview } from "@/lib/types";
 import { formatExitCode } from "@/lib/format";
@@ -9,6 +9,7 @@ import { Modal } from "./Modal";
 import { Badge, Banner, Button, Skeleton } from "./ui";
 
 const FINAL_STATES = ["SUCCEEDED", "FAILED", "CANCELLED", "RESTART_REQUIRED"];
+const RETRYABLE_STATES = ["FAILED", "CANCELLED"];
 
 const STEPS = [
   { label: "Queued", help: "Waiting for the agent to pick up the update" },
@@ -33,13 +34,17 @@ export function UpdateDialog({
   onClose: () => void;
   onFinished?: () => void; // e.g. reload the page after a finished update
 }) {
+  const [attempt, setAttempt] = useState(0); // goes up on "Try again"
   const [preview, setPreview] = useState<UpdatePreview | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [now, setNow] = useState(Date.now());
-  const [idempotencyKey] = useState(() => crypto.randomUUID()); // same key even if Confirm is clicked twice
   const [submitting, setSubmitting] = useState(false);
   const [jobId, setJobId] = useState<string | null>(null);
   const [job, setJob] = useState<UpdateJobStatus | null>(null);
+  const [finishedOnce, setFinishedOnce] = useState(false); // any attempt finished → reload page on close
+
+  // A new idempotency key for every attempt (the same key if Confirm is clicked twice)
+  const idempotencyKey = useMemo(() => crypto.randomUUID(), [attempt]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 1. Ask the server to check everything and prepare a one-time preview
   useEffect(() => {
@@ -50,7 +55,7 @@ export function UpdateDialog({
     return () => {
       cancelled = true;
     };
-  }, [applicationId]);
+  }, [applicationId, attempt]);
 
   // Countdown until the preview expires
   useEffect(() => {
@@ -69,7 +74,10 @@ export function UpdateDialog({
         const j = await api<UpdateJobStatus>(`/updates/jobs/${jobId}`);
         if (cancelled) return;
         setJob(j);
-        if (FINAL_STATES.includes(j.state)) return; // finished — stop checking
+        if (FINAL_STATES.includes(j.state)) {
+          setFinishedOnce(true);
+          return; // finished — stop checking
+        }
       } catch {
         /* temporary problem — keep checking */
       }
@@ -102,13 +110,23 @@ export function UpdateDialog({
     }
   }
 
+  // Start over with a fresh confirmation (after a failure or an expired preview)
+  function tryAgain() {
+    setJobId(null);
+    setJob(null);
+    setPreview(null);
+    setError(null);
+    setAttempt((a) => a + 1);
+  }
+
   const finished = !!job && FINAL_STATES.includes(job.state);
+  const canRetry = !!job && RETRYABLE_STATES.includes(job.state);
   const secondsLeft = preview ? Math.max(0, Math.floor((new Date(preview.expiresAt).getTime() - now) / 1000)) : 0;
   const expired = !!preview && secondsLeft === 0;
 
   function close() {
     onClose();
-    if (finished) onFinished?.();
+    if (finishedOnce) onFinished?.();
   }
 
   const footer = !jobId ? (
@@ -116,12 +134,27 @@ export function UpdateDialog({
       <Button variant="secondary" onClick={close}>
         Cancel
       </Button>
-      <Button onClick={confirm} disabled={!preview || expired || submitting}>
-        {submitting ? "Starting…" : "Confirm update"}
-      </Button>
+      {expired ? (
+        <Button onClick={tryAgain}>
+          <RotateCcw size={16} aria-hidden /> Refresh confirmation
+        </Button>
+      ) : (
+        <Button onClick={confirm} disabled={!preview || submitting}>
+          {submitting ? "Starting…" : "Confirm update"}
+        </Button>
+      )}
     </>
   ) : finished ? (
-    <Button onClick={close}>Close</Button>
+    <>
+      <Button variant={canRetry ? "secondary" : "primary"} onClick={close}>
+        Close
+      </Button>
+      {canRetry && (
+        <Button onClick={tryAgain}>
+          <RotateCcw size={16} aria-hidden /> Try again
+        </Button>
+      )}
+    </>
   ) : (
     <Button variant="secondary" onClick={close} title="The update keeps running on the computer">
       Close (keeps running)
@@ -186,7 +219,7 @@ export function UpdateDialog({
 
               <p className="text-xs text-muted">
                 {expired
-                  ? "This confirmation has expired. Close and open it again."
+                  ? "This confirmation has expired. Click Refresh confirmation to check the update again."
                   : `This confirmation is valid for ${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, "0")}.`}
               </p>
             </>
@@ -218,7 +251,13 @@ function UpdateProgress({ job, finished }: { job: UpdateJobStatus | null; finish
                       : "border-border text-muted"
                 }`}
               >
-                {done ? <Check size={14} aria-hidden /> : active ? <Loader2 size={14} className="animate-spin" aria-hidden /> : i + 1}
+                {done ? (
+                  <Check size={14} aria-hidden />
+                ) : active ? (
+                  <Loader2 size={14} className="animate-spin" aria-hidden />
+                ) : (
+                  i + 1
+                )}
               </span>
               <div>
                 <div className={`text-sm ${active ? "font-semibold" : ""}`}>{s.label}</div>
@@ -236,19 +275,32 @@ function UpdateProgress({ job, finished }: { job: UpdateJobStatus | null; finish
               {job.displayName} was updated to <strong>{job.verifiedVersion}</strong> and verified by a rescan.
             </Banner>
           )}
+
           {job.state === "RESTART_REQUIRED" && (
             <Banner tone="warning">
-              {job.errorMessage ?? "Windows needs a restart to finish the update."} Restart the computer, then run a
-              new scan to confirm the new version.
+              <p className="font-semibold">{job.errorMessage ?? "Windows needs a restart to finish the update."}</p>
+              <ol className="mt-2 list-decimal space-y-1 pl-5">
+                <li>Save your work and restart the computer.</li>
+                <li>Start the UpdatePilot agent again.</li>
+                <li>Click Scan now to confirm {job.displayName} is on {job.targetVersion}.</li>
+              </ol>
             </Banner>
           )}
+
           {job.state === "FAILED" && (
             <Banner tone="danger">
-              {job.errorMessage ?? "The update failed."}
-              {job.exitCode !== null && ` (exit code ${formatExitCode(job.exitCode)})`}
-              {job.verifiedVersion && ` Installed version is still ${job.verifiedVersion}.`}
+              <p className="font-semibold">The update didn&apos;t complete.</p>
+              <p className="mt-1">
+                {job.errorMessage ?? "The update failed."}
+                {job.exitCode !== null && ` (exit code ${formatExitCode(job.exitCode)})`}
+              </p>
+              {job.verifiedVersion && (
+                <p className="mt-1">Nothing was changed: {job.displayName} is still on {job.verifiedVersion}.</p>
+              )}
+              <p className="mt-1">Fix the problem above, then click Try again.</p>
             </Banner>
           )}
+
           {job.state === "CANCELLED" && <Banner tone="neutral">The update was cancelled.</Banner>}
         </>
       )}

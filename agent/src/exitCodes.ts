@@ -29,6 +29,7 @@ const CODES: Record<number, ExitInfo> = {
   0x8a150105: failed("Not enough disk space"),
   0x8a150107: failed("No internet connection"),
   0x8a15010f: failed("Blocked by your organisation's policy"),
+  0x80073d02: failed("The app is open. Close it and try again"), // Store (MSIX) app in use
   0x8a15002b: failed("WinGet found no applicable update (the app may already be up to date)"),
   0x8a150014: failed("WinGet couldn't find this package"),
 };

@@ -107,6 +107,7 @@ router.get("/:id", async (req, res) => {
         select: {
           id: true, fromVersion: true, targetVersion: true, state: true,
           verificationResult: true, exitCode: true, createdAt: true, finishedAt: true,
+          errorMessage: true,
         },
       },
     },

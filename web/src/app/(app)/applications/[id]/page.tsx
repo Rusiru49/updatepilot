@@ -6,7 +6,7 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import type { AppDetails } from "@/lib/types";
-import { formatDate, formatDateTime, safeUrl, timeAgo } from "@/lib/format";
+import { formatDate, formatDateTime, formatExitCode, safeUrl, timeAgo } from "@/lib/format";
 import { Badge, Banner, Button, Card, EmptyState, ErrorState, Skeleton, type Tone } from "@/components/ui";
 import { JobStateBadge, UpdateStatusBadge } from "@/components/StatusBadge";
 import { UpdateDialog } from "@/components/UpdateDialog";
@@ -263,8 +263,9 @@ export default function ApplicationDetailsPage() {
                       <td className="py-2 font-mono text-xs">
                         {u.fromVersion} → {u.targetVersion}
                         {u.exitCode !== null && u.exitCode !== 0 && (
-                          <div className="font-sans text-danger">exit code {u.exitCode}</div>
+                          <div className="font-sans text-danger">exit code {formatExitCode(u.exitCode)}</div>
                         )}
+                        {u.errorMessage && <div className="mt-1 font-sans text-xs text-muted">{u.errorMessage}</div>}
                       </td>
                       <td className="py-2"><JobStateBadge state={u.state} /></td>
                       <td className="py-2 text-muted">{VERIFICATION_LABEL[u.verificationResult]}</td>

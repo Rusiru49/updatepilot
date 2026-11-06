@@ -61,4 +61,9 @@ describe("exit codes", () => {
     assert.match(describeExitCode(12345).message, /exit code 12345/);
     assert.equal(describeExitCode(null).outcome, "failed");
   });
+
+    it("recognises a Store (MSIX) app that is still open", () => {
+    assert.match(describeExitCode(0x80073d02 | 0).message, /app is open/);
+    assert.equal(formatExitCode(0x80073d02 | 0), "0x80073D02");
+  });
 });

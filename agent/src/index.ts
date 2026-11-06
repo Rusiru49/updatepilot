@@ -136,9 +136,9 @@ async function runUpdate(job: Job) {
   log(`Update requested: ${packageId} ${from} -> ${target}. Running winget upgrade...`);
   log("If Windows asks for administrator approval, answer the prompt on this computer.");
 
-  let exitCode: number | null = null;
-  let restartRequired = false;
-  let error: string | null = null;
+    let exitCode: number | null = null;
+    let restartRequired = false;
+    let error: string | null = null;
 
   try {
     const result = await upgradePackage(packageId, target);
@@ -155,12 +155,22 @@ async function runUpdate(job: Job) {
 
   // Always verify with a fresh scan — never trust the installer alone
   await post(`/agent/updates/${job.id}/progress`, { state: "VERIFYING" }).catch(() => {});
+
+  // Some installers (e.g. Store/MSIX apps) need a few seconds to register the new version,
+  // so check up to 3 times, 10 seconds apart, before deciding.
   let verifiedVersion: string | null = null;
-  try {
-    verifiedVersion = await verifyInstalledVersion(packageId);
-    log(`Verification: ${packageId} is now ${verifiedVersion ?? "not found"}`);
-  } catch (err) {
-    log(`Couldn't verify: ${(err as Error).message}`);
+  for (let check = 1; check <= 3; check++) {
+    try {
+      verifiedVersion = await verifyInstalledVersion(packageId);
+      log(`Verification ${check}/3: ${packageId} is now ${verifiedVersion ?? "not found"}`);
+    } catch (err) {
+      log(`Couldn't verify: ${(err as Error).message}`);
+    }
+    const reached =
+      verifiedVersion !== null && verifiedVersion.localeCompare(target, undefined, { numeric: true }) >= 0;
+    if (reached || exitCode !== 0 || check === 3) break;
+    log("New version not visible yet - checking again in 10 s...");
+    await new Promise((resolve) => setTimeout(resolve, 10_000));
   }
 
   const saved = await report(job.id, { exitCode, restartRequired, verifiedVersion, error: error?.slice(0, 500) ?? null });
