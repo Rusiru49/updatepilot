@@ -132,3 +132,31 @@ export type UpdateJobStatus = {
   startedAt: string | null;
   finishedAt: string | null;
 };
+
+export type UpdateItem = {
+  id: string; // application id
+  displayName: string;
+  publisher: string | null;
+  packageId: string;
+  installedVersion: string;
+  availableVersion: string;
+  majorUpgrade: boolean;
+  device: { id: string; deviceName: string; online: boolean };
+  activeJob: { id: string; state: JobState } | null;
+  lastAttempt: { id: string; state: JobState; errorMessage: string | null; finishedAt: string | null } | null;
+};
+
+export type RecentUpdate = {
+  id: string;
+  applicationId: string;
+  displayName: string;
+  deviceName: string;
+  fromVersion: string;
+  targetVersion: string;
+  state: JobState;
+  verificationResult: "PENDING" | "VERIFIED" | "MISMATCH" | "NOT_CHECKED";
+  errorMessage: string | null;
+  finishedAt: string | null;
+};
+
+export type UpdatesResponse = { items: UpdateItem[]; total: number; recent: RecentUpdate[] }; 

@@ -4,14 +4,14 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
-import type { AppItem, Dashboard, Paged } from "@/lib/types";
+import type { AppItem, Dashboard, Paged, UpdateItem, UpdatesResponse } from "@/lib/types";
 import { activityLabel, timeAgo } from "@/lib/format";
 import { Banner, Button, Card, EmptyState, ErrorState, Skeleton, StatCard } from "@/components/ui";
 import { ScanControl } from "@/components/ScanControl";
 
 export default function OverviewPage() {
   const [data, setData] = useState<Dashboard | null>(null);
-  const [updates, setUpdates] = useState<AppItem[]>([]);
+  const [updates, setUpdates] = useState<UpdateItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -23,8 +23,8 @@ export default function OverviewPage() {
       const dashboard = await api<Dashboard>("/dashboard");
       setData(dashboard);
       if (dashboard.device) {
-        const apps = await api<Paged<AppItem>>(`/applications?pageSize=100&deviceId=${dashboard.device.id}`);
-        setUpdates(apps.items.filter((a) => a.updateStatus === "update_available").slice(0, 5));
+        const res = await api<UpdatesResponse>(`/updates?deviceId=${dashboard.device.id}`);
+        setUpdates(res.items.slice(0, 5)); // no 100-app limit any more
       } else {
         setUpdates([]);
       }
@@ -119,7 +119,7 @@ export default function OverviewPage() {
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-semibold">Updates available</h2>
             <Link href="/applications" className="text-sm font-medium text-primary hover:underline">
-              View all apps
+              View all updates
             </Link>
           </div>
 

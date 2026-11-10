@@ -100,7 +100,11 @@ export default function ApplicationDetailsPage() {
             <h1 className="text-2xl font-bold">{app.displayName}</h1>
             <UpdateStatusBadge status={app.updateStatus} />
           </div>
-          <p className="mt-1 text-sm text-muted">
+          <p className="mt-1 flex flex-wrap items-center gap-x-3 text-sm text-muted">
+            {app.publisher && <span>{app.publisher}</span>}
+            {app.packageId && <span className="font-mono text-xs">{app.packageId}</span>}
+            <span>{device.deviceName}</span>
+          </p>
             {app.publisher ?? "Unknown publisher"}
             {app.packageId && (
               <>
@@ -110,7 +114,6 @@ export default function ApplicationDetailsPage() {
             )}
             {" · "}
             {device.deviceName}
-          </p>
         </div>
 
         {changelog && (

@@ -14,6 +14,14 @@ router.use(requireAuth);
 export const PREVIEW_TTL_MS = 5 * 60 * 1000; // a preview is valid for 5 minutes
 export const ACTIVE_UPDATE_STATES = ["QUEUED", "SENT_TO_AGENT", "RUNNING", "VERIFYING"] as const;
 
+// Microsoft Store-style (MSIX) apps that Windows won't replace while they're running
+const STORE_STYLE_APPS = new Set([
+  "Microsoft.WindowsTerminal",
+  "Microsoft.WindowsTerminal.Preview",
+  "Microsoft.Teams",
+  "Microsoft.AppInstaller",
+]);
+
 function fail(res: Response, status: number, code: string, message: string) {
   res.status(status).json({ error: { code, message } });
 }
@@ -66,6 +74,11 @@ router.post("/:id/preview", async (req, res) => {
   }
   if (app.packageId === "Microsoft.AppInstaller") {
     warnings.push("This updates WinGet itself (App Installer). The agent may need to be restarted afterwards.");
+  }
+  if (STORE_STYLE_APPS.has(app.packageId)) {
+    warnings.push(
+      `${app.displayName} is a Microsoft Store-style app. Close every window of it first (on Windows 11 this can include Command Prompt windows), or Windows may postpone the update.`,
+    );
   }
   warnings.push("Windows may ask for administrator approval on that computer.");
   warnings.push(`Close ${app.displayName} before updating, or the installer may fail.`);
@@ -235,6 +248,100 @@ router.get("/jobs/:id", async (req, res) => {
     createdAt: job.createdAt,
     startedAt: job.startedAt,
     finishedAt: job.finishedAt,
+  });
+});
+
+const FINAL_UPDATE_STATES = ["SUCCEEDED", "FAILED", "CANCELLED", "RESTART_REQUIRED"] as const;
+
+type JobSummary = { id: string; state: string; errorMessage: string | null; finishedAt: Date | null };
+
+// GET /api/v1/updates — every app with a REAL newer version (no page limit),
+// plus any update running now, the last attempt, and recent results
+router.get("/", async (req, res) => {
+  const parsed = z.object({ deviceId: z.string().uuid().optional() }).safeParse(req.query);
+  if (!parsed.success) return fail(res, 400, "VALIDATION_ERROR", "Invalid deviceId");
+  const userId = req.user!.id;
+  const { deviceId } = parsed.data;
+
+  // Only trusted, comparable apps on the user's own (non-revoked) computers
+  const apps = await prisma.application.findMany({
+    where: {
+      removedAt: null,
+      matchStatus: "MATCHED",
+      versionUncertain: false,
+      packageId: { not: null },
+      device: { userId, status: { not: "REVOKED" }, ...(deviceId ? { id: deviceId } : {}) },
+    },
+    include: { device: { select: { id: true, deviceName: true, status: true, lastSeenAt: true } } },
+    orderBy: { displayName: "asc" },
+  });
+
+  const latest = await getLatestVersions(apps.map((a) => a.packageId!));
+  const updatable = apps.filter((a) => {
+    const available = latest.get(a.packageId!);
+    return !!available && !!a.installedVersion && compareVersions(available, a.installedVersion) === 1;
+  });
+
+  // Running update + last finished attempt for each app
+  const jobs = updatable.length
+    ? await prisma.updateJob.findMany({
+        where: { applicationId: { in: updatable.map((a) => a.id) } },
+        orderBy: { createdAt: "desc" },
+        select: { id: true, applicationId: true, state: true, errorMessage: true, finishedAt: true },
+      })
+    : [];
+  const active = new Map<string, { id: string; state: string }>();
+  const last = new Map<string, JobSummary>();
+  for (const j of jobs) {
+    if ((ACTIVE_UPDATE_STATES as readonly string[]).includes(j.state)) {
+      if (!active.has(j.applicationId)) active.set(j.applicationId, { id: j.id, state: j.state });
+    } else if (!last.has(j.applicationId)) {
+      last.set(j.applicationId, { id: j.id, state: j.state, errorMessage: j.errorMessage, finishedAt: j.finishedAt });
+    }
+  }
+
+  // The last 5 finished updates (including apps that are now up to date)
+  const recent = await prisma.updateJob.findMany({
+    where: { device: { userId }, state: { in: [...FINAL_UPDATE_STATES] }, ...(deviceId ? { deviceId } : {}) },
+    orderBy: { finishedAt: { sort: "desc", nulls: "last" } },
+    take: 5,
+    include: {
+      application: { select: { displayName: true } },
+      device: { select: { deviceName: true } },
+    },
+  });
+
+  res.json({
+    items: updatable.map((a) => {
+      const available = latest.get(a.packageId!)!;
+      const fromMajor = majorVersion(a.installedVersion!);
+      const toMajor = majorVersion(available);
+      return {
+        id: a.id,
+        displayName: a.displayName,
+        publisher: a.publisher,
+        packageId: a.packageId,
+        installedVersion: a.installedVersion,
+        availableVersion: available,
+        majorUpgrade: fromMajor !== null && toMajor !== null && toMajor > fromMajor,
+        device: { id: a.device.id, deviceName: a.device.deviceName, online: effectiveStatus(a.device) === "ONLINE" },
+        activeJob: active.get(a.id) ?? null,
+        lastAttempt: last.get(a.id) ?? null,
+      };
+    }),
+    total: updatable.length,
+    recent: recent.map((j) => ({
+      id: j.id,
+      applicationId: j.applicationId,
+      displayName: j.application.displayName,
+      deviceName: j.device.deviceName,
+      fromVersion: j.fromVersion,
+      targetVersion: j.targetVersion,
+      state: j.state,
+      verificationResult: j.verificationResult,
+      errorMessage: j.errorMessage,
+      finishedAt: j.finishedAt,
+    })),
   });
 });
 
