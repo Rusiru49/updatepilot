@@ -62,10 +62,10 @@ router.post("/register", async (req, res) => {
     },
   });
 
-  const token = await createSession(user.id);
+  const { token, csrfToken } = await createSession(user.id);
   await prisma.auditEvent.create({ data: { actorUserId: user.id, eventType: "auth.register" } });
 
-  res.cookie(SESSION_COOKIE, token, cookieOptions).status(201).json({ user: toPublicUser(user) });
+  res.cookie(SESSION_COOKIE, token, cookieOptions).status(201).json({ user: toPublicUser(user), csrfToken });
 });
 
 // POST /api/v1/auth/login
@@ -85,10 +85,10 @@ router.post("/login", async (req, res) => {
     return;
   }
 
-  const token = await createSession(user.id);
+  const { token, csrfToken } = await createSession(user.id);
   await prisma.auditEvent.create({ data: { actorUserId: user.id, eventType: "auth.login" } });
 
-  res.cookie(SESSION_COOKIE, token, cookieOptions).json({ user: toPublicUser(user) });
+  res.cookie(SESSION_COOKIE, token, cookieOptions).json({ user: toPublicUser(user), csrfToken });
 });
 
 // POST /api/v1/auth/logout
@@ -99,9 +99,9 @@ router.post("/logout", async (req, res) => {
   res.status(204).end();
 });
 
-// GET /api/v1/auth/me
+// GET /api/v1/auth/me — also gives the page its CSRF token after a refresh
 router.get("/me", requireAuth, (req, res) => {
-  res.json({ user: req.user });
+  res.json({ user: req.user, csrfToken: req.csrfToken });
 });
 
 export default router;

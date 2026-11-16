@@ -91,9 +91,11 @@ export async function createUserWithApps(email: string, appNames: string[]) {
   return { user, device, apps };
 }
 
-// Logs in and returns a client that keeps the session cookie
+// Logs in and returns a client that keeps the session cookie AND sends the
+// CSRF token with every request, exactly like the web app does
 export async function login(email: string, password = PASSWORD) {
   const agent = request.agent(app);
-  await agent.post("/api/v1/auth/login").send({ email, password }).expect(200);
+  const res = await agent.post("/api/v1/auth/login").send({ email, password }).expect(200);
+  agent.set("X-CSRF-Token", res.body.csrfToken);
   return agent;
 }

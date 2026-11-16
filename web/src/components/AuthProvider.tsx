@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { api } from "@/lib/api";
+import { api, setCsrfToken } from "@/lib/api";
 import type { User } from "@/lib/types";
 
 type AuthContextValue = {
@@ -26,6 +26,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function logout() {
     await api("/auth/logout", { method: "POST" }).catch(() => {});
+    setCsrfToken(null);
     setUser(null);
   }
 

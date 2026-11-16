@@ -18,17 +18,30 @@ export const hashPassword = (password: string) => bcrypt.hash(password, 12);
 export const verifyPassword = (password: string, hash: string) => bcrypt.compare(password, hash);
 export const sha256 = (value: string) => crypto.createHash("sha256").update(value).digest("hex");
 
-// Creates a random token. Only its hash is saved in the database.
+// A random CSRF token, one per login session
+export const newCsrfToken = () => crypto.randomBytes(32).toString("base64url");
+
+// Compare in constant time, so the token can't be guessed from response timing
+export function csrfMatches(sent: string | undefined, expected: string) {
+  if (!sent || !expected) return false;
+  const a = Buffer.from(sent);
+  const b = Buffer.from(expected);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+// Creates a random session token (only its hash is saved) and a CSRF token for this session.
 export async function createSession(userId: string) {
   const token = crypto.randomBytes(32).toString("base64url");
+  const csrfToken = newCsrfToken();
   await prisma.session.create({
     data: {
       userId,
       tokenHash: sha256(token),
+      csrfToken,
       expiresAt: new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000),
     },
   });
-  return token;
+  return { token, csrfToken };
 }
 
 export async function findSession(token: string) {
@@ -37,6 +50,13 @@ export async function findSession(token: string) {
     include: { user: true },
   });
   if (!session || session.expiresAt < new Date()) return null;
+
+  // Sessions created before CSRF protection existed get a token now (no forced logout)
+  if (!session.csrfToken) {
+    const csrfToken = newCsrfToken();
+    await prisma.session.update({ where: { id: session.id }, data: { csrfToken } });
+    session.csrfToken = csrfToken;
+  }
   return session;
 }
 

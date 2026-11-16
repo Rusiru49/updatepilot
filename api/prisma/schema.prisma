@@ -278,6 +278,7 @@ model Session {
   userId    String   @db.Uuid
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   tokenHash String   @unique
+  csrfToken String   @default("")
   createdAt DateTime @default(now())
   expiresAt DateTime
 
