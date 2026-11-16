@@ -25,8 +25,12 @@ export function Pagination({
   const to = Math.min(page * pageSize, total);
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-3 text-sm">
-      <span className="text-muted">
+    <nav
+      aria-label="Pagination"
+      className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-3 text-sm"
+    >
+      {/* Read out when the page changes, so screen-reader users know the table updated */}
+      <span className="text-muted" aria-live="polite">
         Showing {from}–{to} of {total}
       </span>
       <div className="flex flex-wrap items-center gap-2">
@@ -38,16 +42,28 @@ export function Pagination({
             ))}
           </select>
         </label>
-        <Button variant="secondary" className="px-3 py-1.5" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>
+        <Button
+          variant="secondary"
+          className="px-3 py-1.5"
+          aria-label="Previous page"
+          disabled={page <= 1}
+          onClick={() => onPageChange(page - 1)}
+        >
           Previous
         </Button>
         <span className="text-muted">
           Page {page} of {totalPages}
         </span>
-        <Button variant="secondary" className="px-3 py-1.5" disabled={page >= totalPages} onClick={() => onPageChange(page + 1)}>
+        <Button
+          variant="secondary"
+          className="px-3 py-1.5"
+          aria-label="Next page"
+          disabled={page >= totalPages}
+          onClick={() => onPageChange(page + 1)}
+        >
           Next
         </Button>
       </div>
-    </div>
+    </nav>
   );
 }

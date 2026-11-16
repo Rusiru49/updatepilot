@@ -2,16 +2,18 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { api, ApiError } from "@/lib/api";
 import type { User } from "@/lib/types";
+import { usePageTitle } from "@/lib/usePageTitle";
 import { useAuth } from "@/components/AuthProvider";
 import { Banner, Button } from "@/components/ui";
-import Link from "next/link";
 
 const inputClass =
-  "w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary-soft";
+  "w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary-soft aria-[invalid=true]:border-danger";
 
 export default function LoginPage() {
+  usePageTitle("Sign in");
   const { user, loading, setUser } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -27,6 +29,13 @@ export default function LoginPage() {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+
+    // Say what's missing instead of silently disabling the button
+    if (!email.trim() || !password) {
+      setError("Enter your email and password.");
+      return;
+    }
+
     setSubmitting(true);
     try {
       const res = await api<{ user: User }>("/auth/login", {
@@ -53,15 +62,21 @@ export default function LoginPage() {
         <p className="mb-6 mt-1 text-sm text-muted">Keep your Windows apps up to date, safely.</p>
 
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-          {error && <Banner tone="danger">{error}</Banner>}
+          {/* role="alert" makes screen readers read the error as soon as it appears */}
+          <div role="alert" id="login-error">
+            {error && <Banner tone="danger">{error}</Banner>}
+          </div>
 
           <div className="space-y-1.5">
             <label htmlFor="email" className="text-sm font-medium">Email</label>
             <input
               id="email"
+              name="email"
               type="email"
               autoComplete="email"
               required
+              aria-invalid={!!error}
+              aria-describedby={error ? "login-error" : undefined}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className={inputClass}
@@ -72,16 +87,19 @@ export default function LoginPage() {
             <label htmlFor="password" className="text-sm font-medium">Password</label>
             <input
               id="password"
+              name="password"
               type="password"
               autoComplete="current-password"
               required
+              aria-invalid={!!error}
+              aria-describedby={error ? "login-error" : undefined}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className={inputClass}
             />
           </div>
 
-          <Button type="submit" className="w-full" disabled={submitting || !email || !password}>
+          <Button type="submit" className="w-full" disabled={submitting}>
             {submitting ? "Signing in…" : "Sign in"}
           </Button>
         </form>
@@ -93,10 +111,10 @@ export default function LoginPage() {
           </Link>
         </p>
 
-        {/* Development only — remove before release */}
-        <p className="mt-6 text-xs text-muted">
-          Sample account: demo@updatepilot.local / Demo@12345
-        </p>
+        {/* Shown only while developing — never in a production build */}
+        {process.env.NODE_ENV !== "production" && (
+          <p className="mt-6 text-xs text-muted">Sample account: demo@updatepilot.local / Demo@12345</p>
+        )}
       </div>
     </main>
   );

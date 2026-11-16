@@ -69,3 +69,20 @@ body {
   outline: 2px solid #4fa3b8;
   outline-offset: 2px;
 }
+
+/* Keyboard users must always see where they are */
+:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* People who turn off animations in Windows don't get spinning or sliding effects */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

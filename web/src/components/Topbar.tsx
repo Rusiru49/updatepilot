@@ -26,6 +26,7 @@ export function Topbar() {
           <ThemeToggle />
           <span className="hidden text-sm text-muted sm:inline">{user?.displayName}</span>
           <button
+            type="button"
             onClick={handleLogout}
             className="flex items-center gap-1.5 rounded-md px-3 py-2 text-sm text-muted hover:bg-background hover:text-foreground"
           >
@@ -34,19 +35,23 @@ export function Topbar() {
         </div>
       </div>
 
-      {/* Small screens: navigation as a scrollable row */}
+      {/* Small screens: navigation as a scrollable row (the sidebar is hidden there) */}
       <nav aria-label="Main" className="flex gap-1 overflow-x-auto px-4 pb-3 md:hidden">
-        {NAV_ITEMS.map(({ href, label }) => (
-          <Link
-            key={href}
-            href={href}
-            className={`whitespace-nowrap rounded-md px-3 py-1.5 text-sm ${
-              isActive(pathname, href) ? "bg-primary-soft font-semibold text-primary" : "text-muted"
-            }`}
-          >
-            {label}
-          </Link>
-        ))}
+        {NAV_ITEMS.map(({ href, label }) => {
+          const active = isActive(pathname, href);
+          return (
+            <Link
+              key={href}
+              href={href}
+              aria-current={active ? "page" : undefined}
+              className={`whitespace-nowrap rounded-md px-3 py-1.5 text-sm ${
+                active ? "bg-primary-soft font-semibold text-primary" : "text-muted"
+              }`}
+            >
+              {label}
+            </Link>
+          );
+        })}
       </nav>
     </header>
   );

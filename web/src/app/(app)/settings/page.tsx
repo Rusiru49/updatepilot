@@ -8,6 +8,7 @@ import type { Device } from "@/lib/types";
 import { formatDate, timeAgo } from "@/lib/format";
 import { useAuth } from "@/components/AuthProvider";
 import { Badge, Banner, Button, Card, EmptyState, ErrorState, Skeleton, type Tone } from "@/components/ui";
+import { setTheme, useTheme, type Theme } from "@/lib/theme";
 
 const DEVICE_STATUS: Record<Device["status"], { tone: Tone; label: string }> = {
   ONLINE: { tone: "success", label: "Online" },
@@ -260,19 +261,9 @@ export default function SettingsPage() {
 /* ───────────────────────── Theme choice ───────────────────────── */
 
 function ThemeChoice() {
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const theme = useTheme();
 
-  useEffect(() => {
-    setTheme(document.documentElement.dataset.theme === "dark" ? "dark" : "light");
-  }, []);
-
-  function choose(next: "light" | "dark") {
-    document.documentElement.dataset.theme = next;
-    try {
-      localStorage.setItem("up-theme", next);
-    } catch {
-      /* storage blocked — still applies for this visit */
-    }
+  function choose(next: Theme) {
     setTheme(next);
   }
 

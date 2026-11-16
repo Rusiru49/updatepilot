@@ -37,7 +37,7 @@ export function UpdateDialog({
   const [attempt, setAttempt] = useState(0); // goes up on "Try again"
   const [preview, setPreview] = useState<UpdatePreview | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [jobId, setJobId] = useState<string | null>(null);
   const [job, setJob] = useState<UpdateJobStatus | null>(null);
@@ -57,10 +57,15 @@ export function UpdateDialog({
     };
   }, [applicationId, attempt]);
 
-  // Countdown until the preview expires
+    // Countdown until the preview expires (first tick right away, then every second)
   useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(timer);
+    const tick = () => setNow(Date.now());
+    const first = setTimeout(tick, 0);
+    const timer = setInterval(tick, 1000);
+    return () => {
+      clearTimeout(first);
+      clearInterval(timer);
+    };
   }, []);
 
   // 3. Follow the update job every 2 s until it finishes
@@ -121,8 +126,9 @@ export function UpdateDialog({
 
   const finished = !!job && FINAL_STATES.includes(job.state);
   const canRetry = !!job && RETRYABLE_STATES.includes(job.state);
-  const secondsLeft = preview ? Math.max(0, Math.floor((new Date(preview.expiresAt).getTime() - now) / 1000)) : 0;
-  const expired = !!preview && secondsLeft === 0;
+  const secondsLeft =
+    preview && now ? Math.max(0, Math.floor((new Date(preview.expiresAt).getTime() - now) / 1000)) : 0;
+  const expired = !!preview && now > 0 && secondsLeft === 0; // now = 0 means "not ticked yet", not expired
 
   function close() {
     onClose();
@@ -177,7 +183,11 @@ export function UpdateDialog({
         </div>
       ) : (
         <div className="space-y-4">
-          {error && <Banner tone="danger">{error}</Banner>}
+          {error && (
+            <div role="alert">
+              <Banner tone="danger">{error}</Banner>
+            </div>
+          )}
 
           {preview && (
             <>
@@ -230,18 +240,33 @@ export function UpdateDialog({
   );
 }
 
+// What a screen reader says when the update moves to a new step
+function announcement(job: UpdateJobStatus | null, finished: boolean) {
+  if (!job) return "Update queued. Waiting for the agent.";
+  if (!finished) return `${STEPS[stepIndex(job.state)].label}: ${STEPS[stepIndex(job.state)].help}.`;
+  if (job.state === "SUCCEEDED") return `Update finished. ${job.displayName} is now on ${job.verifiedVersion}.`;
+  if (job.state === "RESTART_REQUIRED") return "Update needs a restart to finish.";
+  if (job.state === "CANCELLED") return "The update was cancelled.";
+  return `The update didn't complete. ${job.errorMessage ?? ""}`;
+}
+
 function UpdateProgress({ job, finished }: { job: UpdateJobStatus | null; finished: boolean }) {
   const current = job ? stepIndex(job.state) : 0;
   const succeeded = job?.state === "SUCCEEDED";
 
   return (
     <div className="space-y-5">
-      <ol className="space-y-3" aria-live="polite">
+      {/* Always present and hidden: reads out ONE short sentence whenever the step changes */}
+      <p role="status" aria-live="polite" className="sr-only">
+        {announcement(job, finished)}
+      </p>
+
+      <ol className="space-y-3" aria-label="Update progress">
         {STEPS.map((s, i) => {
           const done = finished ? i < 3 || succeeded : i < current;
           const active = !finished && i === current;
           return (
-            <li key={s.label} className="flex items-start gap-3">
+            <li key={s.label} className="flex items-start gap-3" aria-current={active ? "step" : undefined}>
               <span
                 className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 text-xs font-bold ${
                   done
@@ -250,17 +275,22 @@ function UpdateProgress({ job, finished }: { job: UpdateJobStatus | null; finish
                       ? "border-primary text-primary"
                       : "border-border text-muted"
                 }`}
+                aria-hidden
               >
                 {done ? (
-                  <Check size={14} aria-hidden />
+                  <Check size={14} />
                 ) : active ? (
-                  <Loader2 size={14} className="animate-spin" aria-hidden />
+                  <Loader2 size={14} className="animate-spin" />
                 ) : (
                   i + 1
                 )}
               </span>
               <div>
-                <div className={`text-sm ${active ? "font-semibold" : ""}`}>{s.label}</div>
+                <div className={`text-sm ${active ? "font-semibold" : ""}`}>
+                  {s.label}
+                  {/* The tick and spinner are only pictures, so say it in words for screen readers */}
+                  <span className="sr-only">{done ? " (done)" : active ? " (in progress)" : " (not started)"}</span>
+                </div>
                 <div className="text-xs text-muted">{s.help}</div>
               </div>
             </li>
@@ -295,7 +325,7 @@ function UpdateProgress({ job, finished }: { job: UpdateJobStatus | null; finish
                 {job.exitCode !== null && ` (exit code ${formatExitCode(job.exitCode)})`}
               </p>
               {job.verifiedVersion && (
-                <p className="mt-1">Nothing was changed: {job.displayName} is still on {job.verifiedVersion}.</p>
+                <p className="mt-1">Installed version now: {job.displayName} is on {job.verifiedVersion}.</p>
               )}
               <p className="mt-1">Fix the problem above, then click Try again.</p>
             </Banner>

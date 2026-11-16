@@ -79,7 +79,7 @@ export function ScanControl({
   return (
     <div className="space-y-3">
       {scanId ? (
-        <div role="status" className="flex items-center gap-2 text-sm">
+        <div className="flex items-center gap-2 text-sm">
           <Loader2 size={16} className="animate-spin text-primary" aria-hidden />
           {state === "QUEUED" ? "Waiting for the agent to pick up the scan…" : "Scanning installed apps…"}
         </div>
@@ -95,8 +95,19 @@ export function ScanControl({
           </Button>
         </>
       )}
-      {result && <Banner tone="success">{result}</Banner>}
-      {error && <Banner tone="danger">{error}</Banner>}
+
+      {/* Always on the page, so screen readers notice when text appears inside it */}
+      <div role="status" aria-live="polite" className="sr-only">
+        {scanId
+          ? state === "QUEUED"
+            ? "Scan queued. Waiting for the agent."
+            : "Scanning installed apps."
+          : ""}
+      </div>
+      <div aria-live="polite" className="space-y-3">
+        {result && <Banner tone="success">{result}</Banner>}
+        {error && <Banner tone="danger">{error}</Banner>}
+      </div>
     </div>
   );
 }
