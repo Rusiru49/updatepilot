@@ -7,6 +7,7 @@ import { normalizeCode } from "../lib/devices";
 import { requireAgent } from "../middleware/requireAgent";
 import { expireStaleScans, saveScanResults, scanResultsSchema } from "../lib/scans";
 import { expireStaleUpdates, saveUpdateResult } from "../lib/updates";
+import { failInterruptedJobs } from "../lib/recovery";
 
 const router = Router();
 
@@ -79,6 +80,18 @@ router.post("/heartbeat", async (req, res) => {
     res.status(400).json({ error: { code: "VALIDATION_ERROR", message: "Invalid heartbeat" } });
     return;
   }
+
+// POST /api/v1/agent/hello: the agent has just started, so anything it was running before is gone
+router.post("/hello", requireAgent, async (req, res) => {
+  const closed = await failInterruptedJobs(req.agent!.deviceId, "restarted"); // CHECK: req.agent.deviceId
+  res.json({ ok: true, closed });
+});
+
+// POST /api/v1/agent/goodbye: the agent is being stopped (Ctrl+C or window closed)
+router.post("/goodbye", requireAgent, async (req, res) => {
+  await failInterruptedJobs(req.agent!.deviceId, "stopped");
+  res.status(204).end();
+});
 
   await prisma.device.update({
     where: { id: req.agent!.deviceId },

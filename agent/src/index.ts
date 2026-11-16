@@ -17,6 +17,7 @@ import {
   verifyInstalledVersion,
   VERSION_RE,
 } from "./winget";
+import { announceStart, installStopHandler, withRetry } from "./lifecycle";
 
 // Jobs come from the server, so treat every field as untrusted
 type Job = { id: string; type: string; packageId?: unknown; fromVersion?: unknown; targetVersion?: unknown };
@@ -101,15 +102,18 @@ async function runScan(jobId: string) {
   try {
     const { apps, durationMs } = await scanInstalledApps();
     log(`Found ${apps.length} apps in ${(durationMs / 1000).toFixed(1)} s - sending results...`);
-    await post(`/agent/scans/${jobId}/results`, { apps, durationMs }, UPLOAD_TIMEOUT_MS);
+    await withRetry("scan results", () =>
+      post(`/agent/scans/${jobId}/results`, { apps, durationMs }, UPLOAD_TIMEOUT_MS),
+    );
+
     log("Scan results saved.");
   } catch (err) {
     if (err instanceof ApiError && err.status === 401) throw err; // handled in tick()
     const message = (err as Error).message;
     log(`Scan failed: ${message}`);
-    await post(`/agent/scans/${jobId}/fail`, { error: message.slice(0, 500) }).catch(() =>
-      log("Couldn't report the failure (the server will time the job out)."),
-    );
+    await withRetry("scan failure", () =>
+      post(`/agent/scans/${jobId}/fail`, { error: message.slice(0, 500) }),
+    ).catch(() => log("Couldn't report the failure (the server will close the job later)."));
   }
 }
 
@@ -179,7 +183,10 @@ async function runUpdate(job: Job) {
 
 async function report(jobId: string, body: UpdateReport) {
   try {
-    return await post<{ state: string }>(`/agent/updates/${jobId}/result`, body, UPLOAD_TIMEOUT_MS);
+    // The update result matters most, so keep trying if the server is briefly down
+    return await withRetry("update result", () =>
+      post<{ state: string }>(`/agent/updates/${jobId}/result`, body, UPLOAD_TIMEOUT_MS),
+    );
   } catch (err) {
     if (err instanceof ApiError && err.status === 401) throw err;
     log(`Couldn't report the result: ${(err as Error).message}`);
@@ -199,5 +206,7 @@ function shutdown() {
 process.on("SIGINT", shutdown); // Ctrl+C
 process.on("SIGTERM", shutdown);
 
+installStopHandler(creds.serverUrl, creds.agentToken);
+
 log(`UpdatePilot agent ${AGENT_VERSION} starting (checks for work every ${POLL_INTERVAL_MS / 1000} s, Ctrl+C to stop)`);
-tick();
+announceStart(creds.serverUrl, creds.agentToken).finally(() => tick());
