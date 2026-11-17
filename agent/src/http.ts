@@ -44,3 +44,16 @@ export async function request<T>(
   }
   return body as T;
 }
+
+// The agent key must never travel unencrypted: https only, except http://localhost for development
+export function checkServerUrl(raw: string) {
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    throw new Error(`"${raw}" is not a valid server address.`);
+  }
+  const local = ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
+  if (url.protocol === "https:" || (url.protocol === "http:" && local)) return url.origin;
+  throw new Error("The server address must start with https:// (http:// is only allowed for localhost).");
+}

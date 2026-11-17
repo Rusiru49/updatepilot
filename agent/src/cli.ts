@@ -1,9 +1,11 @@
 import { AGENT_VERSION, CREDENTIALS_FILE, SERVER_URL, deviceName, osVersion } from "./config";
-import { ApiError, NetworkError, request } from "./http";
+import { ApiError, NetworkError, request, checkServerUrl } from "./http";
 import { clearCredentials, loadCredentials, saveCredentials } from "./store";
 import { scanInstalledApps, summarize, WingetError } from "./winget";
 
 const [command, ...args] = process.argv.slice(2);
+
+const serverUrl = checkServerUrl(SERVER_URL);
 
 // npm run pair -- K7QM-4R2X   (add --force to replace an existing pairing)
 async function pair() {
@@ -27,14 +29,15 @@ async function pair() {
 
   const name = deviceName();
   console.log(`Pairing "${name}" with ${SERVER_URL} ...`);
+  console.log(`Pairing "${name}" with ${serverUrl} ...`);
 
-  const res = await request<{ deviceId: string; deviceName: string; agentToken: string }>(SERVER_URL, "/agent/pair", {
+  const res = await request<{ deviceId: string; deviceName: string; agentToken: string }>(serverUrl, "/agent/pair", {
     method: "POST",
     body: { code, deviceName: name, osVersion: osVersion(), agentVersion: AGENT_VERSION },
   });
 
   saveCredentials({
-    serverUrl: SERVER_URL,
+    serverUrl,
     deviceId: res.deviceId,
     deviceName: res.deviceName,
     agentToken: res.agentToken,

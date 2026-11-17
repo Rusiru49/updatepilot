@@ -14,6 +14,19 @@ import updatesRouter from "./routes/updates";
 
 const app = express();
 
+// Don't tell attackers which framework we use (T11)
+app.disable("x-powered-by");
+
+// Safe defaults for every API response (T7, T11)
+app.use((_req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff"); // browsers must not guess file types
+  res.setHeader("X-Frame-Options", "DENY"); // can't be shown inside another site's frame
+  res.setHeader("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'"); // JSON only, no scripts
+  res.setHeader("Referrer-Policy", "no-referrer");
+  res.setHeader("Cache-Control", "no-store"); // private data must not be cached
+  next();
+});
+
 // Only the frontend may call the API with cookies
 app.use(cors({ origin: process.env.WEB_ORIGIN ?? "http://localhost:3000", credentials: true }));
 app.use("/api/v1/agent", express.json({ limit: "2mb" })); // scan results can be large

@@ -7,7 +7,7 @@ import {
   UPLOAD_TIMEOUT_MS,
 } from "./config";
 import { describeExitCode, formatExitCode } from "./exitCodes";
-import { ApiError, request } from "./http";
+import { ApiError, checkServerUrl, request } from "./http";
 import { log } from "./log";
 import { clearCredentials, loadCredentials, type Credentials } from "./store";
 import {
@@ -31,6 +31,13 @@ function exitNotPaired(): never {
 }
 
 const creds: Credentials = loadCredentials() ?? exitNotPaired();
+
+try {
+  checkServerUrl(creds.serverUrl);
+} catch (err) {
+  console.error((err as Error).message);
+  process.exit(1);
+}
 
 let stopping = false;
 let timer: NodeJS.Timeout | undefined;
