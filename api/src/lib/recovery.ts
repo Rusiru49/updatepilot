@@ -2,7 +2,8 @@ import { prisma } from "../db";
 import { ACTIVE_SCAN_STATES } from "./scans";
 
 // Jobs the agent has picked up but not finished
-const IN_AGENT_STATES = ["SENT_TO_AGENT", "RUNNING"] as const;
+const SCAN_IN_AGENT = ["SENT_TO_AGENT", "RUNNING"] as const;
+const UPDATE_IN_AGENT = ["SENT_TO_AGENT", "RUNNING", "VERIFYING"] as const;
 
 // No heartbeat for this long while a job is running = the agent is gone.
 // A bit longer than the 2-minute "online" window, so a slow moment doesn't fail a working job.
@@ -21,35 +22,28 @@ export async function failInterruptedJobs(deviceId: string, reason: Reason) {
   const base = RECOVERY_MESSAGES[reason];
 
   const scans = await prisma.scanJob.updateMany({
-    where: { deviceId, status: { in: [...IN_AGENT_STATES] } },
-    data: {
-      status: "FAILED",
-      errorMessage: `${base} Run a new scan.`, // CHECK: errorMessage on ScanJob
-      finishedAt: now,                          // CHECK: finishedAt
-    },
+    where: { deviceId, state: { in: [...SCAN_IN_AGENT] } },
+    data: { state: "FAILED", errorSummary: `${base} Run a new scan.`, finishedAt: now },
   });
 
   const updates = await prisma.updateJob.updateMany({
-    where: { deviceId, status: { in: [...IN_AGENT_STATES] } },
+    where: { deviceId, state: { in: [...UPDATE_IN_AGENT] } },
     data: {
-      status: "FAILED",
+      state: "FAILED",
       errorMessage:
         reason === "restarted"
           ? `${base} The update may or may not have been installed. A check scan has been started to find out.`
           : `${base} The update may or may not have been installed. Run a scan when the agent is back to check.`,
-      finishedAt: now, // CHECK
+      finishedAt: now,
     },
   });
 
   // The agent is back right now, so find out what is really installed
   if (updates.count > 0 && reason === "restarted") {
     const active = await prisma.scanJob.findFirst({
-      where: { deviceId, status: { in: [...ACTIVE_SCAN_STATES] } },
+      where: { deviceId, state: { in: [...ACTIVE_SCAN_STATES] } },
     });
-    if (!active) {
-      // CHECK: if TS asks for more fields, copy the "data" from your POST /devices/:id/scans route
-      await prisma.scanJob.create({ data: { deviceId, status: "QUEUED" } });
-    }
+    if (!active) await prisma.scanJob.create({ data: { deviceId, state: "QUEUED" } });
   }
 
   return { scans: scans.count, updates: updates.count };
@@ -58,11 +52,17 @@ export async function failInterruptedJobs(deviceId: string, reason: Reason) {
 // Finds devices that stopped sending heartbeats while running a job, and closes those jobs.
 export async function failJobsOfLostAgents() {
   const cutoff = new Date(Date.now() - AGENT_LOST_MS);
-  const lost = { status: { in: [...IN_AGENT_STATES] }, device: { lastSeenAt: { lt: cutoff } } }; // CHECK: lastSeenAt
+  const lostDevice = { lastSeenAt: { lt: cutoff } };
 
   const [scans, updates] = await Promise.all([
-    prisma.scanJob.findMany({ where: lost, select: { deviceId: true } }),
-    prisma.updateJob.findMany({ where: lost, select: { deviceId: true } }),
+    prisma.scanJob.findMany({
+      where: { state: { in: [...SCAN_IN_AGENT] }, device: lostDevice },
+      select: { deviceId: true },
+    }),
+    prisma.updateJob.findMany({
+      where: { state: { in: [...UPDATE_IN_AGENT] }, device: lostDevice },
+      select: { deviceId: true },
+    }),
   ]);
 
   const deviceIds = new Set([...scans, ...updates].map((j) => j.deviceId));

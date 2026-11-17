@@ -81,18 +81,6 @@ router.post("/heartbeat", async (req, res) => {
     return;
   }
 
-// POST /api/v1/agent/hello: the agent has just started, so anything it was running before is gone
-router.post("/hello", requireAgent, async (req, res) => {
-  const closed = await failInterruptedJobs(req.agent!.deviceId, "restarted"); // CHECK: req.agent.deviceId
-  res.json({ ok: true, closed });
-});
-
-// POST /api/v1/agent/goodbye: the agent is being stopped (Ctrl+C or window closed)
-router.post("/goodbye", requireAgent, async (req, res) => {
-  await failInterruptedJobs(req.agent!.deviceId, "stopped");
-  res.status(204).end();
-});
-
   await prisma.device.update({
     where: { id: req.agent!.deviceId },
     data: {
@@ -101,6 +89,18 @@ router.post("/goodbye", requireAgent, async (req, res) => {
       ...(parsed.data.agentVersion ? { agentVersion: parsed.data.agentVersion } : {}),
     },
   });
+  res.status(204).end();
+});
+
+// POST /api/v1/agent/hello — the agent has just started, so anything it was running before is gone
+router.post("/hello", async (req, res) => {
+  const closed = await failInterruptedJobs(req.agent!.deviceId, "restarted");
+  res.json({ ok: true, closed });
+});
+
+// POST /api/v1/agent/goodbye — the agent is being stopped (Ctrl+C or window closed)
+router.post("/goodbye", async (req, res) => {
+  await failInterruptedJobs(req.agent!.deviceId, "stopped");
   res.status(204).end();
 });
 
