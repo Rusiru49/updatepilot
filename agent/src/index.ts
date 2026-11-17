@@ -18,6 +18,7 @@ import {
   VERSION_RE,
 } from "./winget";
 import { announceStart, installStopHandler, withRetry } from "./lifecycle";
+import { compareVersions } from "./version";
 
 // Jobs come from the server, so treat every field as untrusted
 type Job = { id: string; type: string; packageId?: unknown; fromVersion?: unknown; targetVersion?: unknown };
@@ -177,8 +178,10 @@ async function runUpdate(job: Job) {
     } catch (err) {
       log(`Couldn't verify: ${(err as Error).message}`);
     }
-    const reached =
-      verifiedVersion !== null && verifiedVersion.localeCompare(target, undefined, { numeric: true }) >= 0;
+    // Same comparison as the server (1.10 > 1.9, pre-release < release)
+    const cmp = verifiedVersion === null ? null : compareVersions(verifiedVersion, target);
+    const reached = cmp !== null && cmp >= 0;
+    
     if (reached || exitCode !== 0 || check === 3) break;
     log("New version not visible yet - checking again in 10 s...");
     await new Promise((resolve) => setTimeout(resolve, 10_000));

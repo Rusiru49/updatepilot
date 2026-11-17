@@ -2,6 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { describeExitCode, formatExitCode } from "../exitCodes";
 import { buildUpgradeArgs, lastMessage, VERSION_RE } from "../winget";
+import { compareVersions } from "../version";
 
 describe("winget upgrade command", () => {
   it("builds one fixed command with exactly the approved package and version", () => {
@@ -65,5 +66,14 @@ describe("exit codes", () => {
     it("recognises a Store (MSIX) app that is still open", () => {
     assert.match(describeExitCode(0x80073d02 | 0).message, /app is open/);
     assert.equal(formatExitCode(0x80073d02 | 0), "0x80073D02");
+  });
+});
+
+describe("agent version comparison", () => {
+  it("matches the server: numbers, missing parts and pre-releases", () => {
+    assert.equal(compareVersions("3.0.24", "3.0.23"), 1);
+    assert.equal(compareVersions("1.10", "1.9"), 1);
+    assert.equal(compareVersions("3.0.24.0", "3.0.24"), 0);
+    assert.equal(compareVersions("2.0.0-beta", "2.0.0"), -1); // localeCompare got this wrong
   });
 });
