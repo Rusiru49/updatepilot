@@ -231,3 +231,8 @@ The sample login is `demo@updatepilot.local` / `Demo@12345` (shown on the login 
 - [ ] Final documentation (architecture and data model update, security and privacy notes)
 - [ ] Demo preparation and `v1.0.0` release
 - Planned improvements: DPAPI key encryption, verified Security insights (NVD), History export, and a cleanup job
+
+## Documentation
+
+- [User guide](docs/USER_GUIDE.md): setting up the agent and using the dashboard
+- [Troubleshooting](docs/TROUBLESHOOTING.md): common problems and fixes
