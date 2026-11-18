@@ -1,6 +1,12 @@
 import { prisma } from "./db";
 import { hashPassword } from "./lib/auth";
 
+// The seed deletes all users and data, so never run it in production
+if (process.env.NODE_ENV === "production") {
+  console.error("Refusing to run the seed in production: it deletes all data.");
+  process.exit(1);
+}
+
 // ── Helpers ──
 const HOUR = 60 * 60 * 1000;
 const DAY = 24 * HOUR;

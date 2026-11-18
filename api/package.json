@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "start": "tsx src/index.ts",
+    "start": "prisma migrate deploy && tsx --env-file=.env.production src/index.ts",
     "seed": "tsx src/seed.ts",
     "test:db": "node --env-file=.env.test node_modules/prisma/build/index.js migrate deploy",
     "test": "tsc --noEmit && tsx --env-file=.env.test --test --test-concurrency=1 src/tests/version.test.ts src/tests/auth.test.ts src/tests/data.test.ts src/tests/agent.test.ts src/tests/scans.test.ts src/tests/updates.test.ts src/tests/execute.test.ts src/tests/updates-list.test.ts src/tests/csrf.test.ts src/tests/recovery.test.ts src/tests/security.test.ts"
