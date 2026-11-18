@@ -185,7 +185,7 @@ The package uses signed `node.exe` and plain scripts instead of a custom `.exe`,
 
 ## Tests
 
-| Part | Command | What runs |
+| Part | Command | What runs |F
 |---|---|---|
 | API | `cd api` → `npm test` | Type-check plus **101 tests**: auth, CSRF, data access, pairing, scans, updates, recovery, security |
 | Agent | `cd agent` → `npm test` | Type-check plus **25 tests**: WinGet parser, command safety, exit codes, version comparison, server-address safety |
@@ -236,3 +236,5 @@ The sample login is `demo@updatepilot.local` / `Demo@12345` (shown on the login 
 
 - [User guide](docs/USER_GUIDE.md): setting up the agent and using the dashboard
 - [Troubleshooting](docs/TROUBLESHOOTING.md): common problems and fixes
+- [Security and privacy](docs/SECURITY_AND_PRIVACY.md): data stored, threat review, accepted risks, production checklist
+- [Architecture](docs/ARCHITECTURE.md): components, flows, data model, API and changes since the design
