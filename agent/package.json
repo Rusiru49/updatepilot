@@ -4,16 +4,19 @@
   "private": true,
   "description": "UpdatePilot Windows agent",
   "type": "module",
-    "scripts": {
+  "scripts": {
     "start": "tsx src/index.ts",
     "pair": "tsx src/cli.ts pair",
     "status": "tsx src/cli.ts status",
     "unpair": "tsx src/cli.ts unpair",
     "scan": "tsx src/cli.ts scan",
-    "test": "tsc --noEmit && tsx --test src/tests/winget.test.ts src/tests/update.test.ts src/tests/security.test.ts"
+    "test": "tsc --noEmit && tsx --test src/tests/winget.test.ts src/tests/update.test.ts src/tests/security.test.ts",
+    "build": "node scripts/build.mjs",
+    "package": "npm test && node scripts/build.mjs && node scripts/package.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
+    "esbuild": "^0.28.2",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"
   }
