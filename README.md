@@ -2,7 +2,7 @@
 
 UpdatePilot is a Windows-first software update intelligence and management MVP. A web dashboard works together with a small Windows agent installed on the user's computer: the agent discovers installed applications with **Windows Package Manager (WinGet)**, the dashboard shows which apps have newer versions, and supported updates run **only after the user reviews and confirms them**. Every update is verified by a fresh scan before it is reported as successful.
 
-**Status:** Week 5 complete (testing, security and UX polish). Milestones M1–M3 are achieved: real scan data (about 100 apps on the development PC) and real verified updates (for example VLC 3.0.23 → 3.0.24 and CrystalDiskInfo 9.9.3 → 9.9.4).
+**Status:** Week 6 in progress (release and documentation). Weeks 1–5 are complete, and milestones M1–M3 are achieved: real scan data (about 100 apps on the development PC) and real verified updates (for example VLC 3.0.23 → 3.0.24 and CrystalDiskInfo 9.9.3 → 9.9.4). The Windows agent is now packaged as a portable zip, and the app runs in production mode.
 
 ## Project structure
 
@@ -10,7 +10,7 @@ UpdatePilot is a Windows-first software update intelligence and management MVP. 
 |---|---|---|
 | `web/` | Dashboard (browser) | Next.js 16 (App Router, Webpack mode), React 19, TypeScript, Tailwind CSS 3, lucide-react |
 | `api/` | Backend API | Node.js, Express 5, TypeScript (tsx), zod, Prisma 7, PostgreSQL |
-| `agent/` | Windows agent (runs on the user's PC) | Node.js, TypeScript, WinGet |
+| `agent/` | Windows agent (runs on the user's PC) | Node.js, TypeScript, WinGet; packaged with esbuild |
 
 ```
 Browser (web, :3000) ──/api rewrite──▶ API (:4000) ◀──HTTPS/Bearer key── Windows agent ──▶ winget
@@ -47,6 +47,7 @@ The web app calls the API through a Next.js rewrite (`/api/*` → `http://localh
   - it retries sending results if the API is briefly down
   - it tells the server when it starts ("hello") and stops ("goodbye"), so interrupted jobs close within seconds
   - it exits and deletes its key if the key is revoked
+- **Portable package:** a zip that runs without Node.js or developer tools (see *Packaged agent*).
 
 ### API endpoints (`/api/v1`)
 
@@ -77,18 +78,18 @@ UpdatePilot was reviewed against 12 threats (T1–T12) in Week 5. The main prote
 - **Tampered jobs or results (T4):** the agent validates every job, and the server re-checks package trust and validates all results.
 - **Other users' data (T5):** every query is limited to the user's own devices; other users' items return 404, not 403.
 - **CSRF (T6):** `SameSite=Lax` cookies plus a per-session CSRF token in the `X-CSRF-Token` header, compared in constant time.
-- **Session theft (T7):** HTTP-only cookies, hashed session tokens, the CSRF token kept in memory only, and security headers (`nosniff`, `X-Frame-Options: DENY`, `frame-ancestors 'none'`, `Referrer-Policy`).
+- **Session theft (T7):** HTTP-only cookies (`Secure` in production), hashed session tokens, the CSRF token kept in memory only, and security headers (`nosniff`, `X-Frame-Options: DENY`, `frame-ancestors 'none'`, `Referrer-Policy`).
 - **False success (T8):** the result is decided by the server from a verification rescan, never by the installer alone.
 - **Replay and double updates (T9):** a one-time, 5-minute preview token, an Idempotency-Key, and one update per computer at a time.
 - **Brute force (T10):** rate limits (login/register 20 per 15 minutes, pairing 10 per 15 minutes), bcrypt (cost 12), and the same error for a wrong password and an unknown email.
 - **Leaks (T11):** password and token hashes are never returned, there are no stack traces in responses, and `X-Powered-By` is hidden.
 - **Denial of service (T12):** JSON body limits (100 kB, agent 2 MB), job timeouts and lost-agent recovery.
 
-## Run locally
+## Run locally (development)
 
 **Requirements:**
 - Windows 10/11 with **WinGet** (App Installer)
-- **Node.js** (LTS) and npm
+- **Node.js** (LTS, version 20 or newer) and npm
 - **PostgreSQL** (developed on version 18)
 
 ### 1. API
@@ -116,7 +117,7 @@ npm run dev
 ```
 Open `http://localhost:3000` and create an account. The frontend runs in Webpack mode (`next dev --webpack`) because Windows Application Control blocks the Turbopack native bindings on the development machine.
 
-### 3. Windows agent
+### 3. Windows agent (from source)
 1. In the dashboard, go to **Settings & agent** and click **Generate pairing code**.
 2. In a third terminal:
    ```powershell
@@ -132,13 +133,63 @@ The agent key is saved in `%LOCALAPPDATA%\UpdatePilot\agent.json`. Press **Ctrl+
 
 **Safety while testing updates:** don't update **Node.js**, **Git** or **App Installer** from UpdatePilot on the development PC, because the agent and WinGet depend on them. Use apps such as VLC or CrystalDiskInfo.
 
+## Production mode (release / demo)
+
+`api/.env.production` contains `NODE_ENV=production` (no secrets; the database settings stay in `api/.env`).
+
+```powershell
+cd api
+npm start          # applies migrations safely (prisma migrate deploy), runs with NODE_ENV=production
+
+cd web
+npm run build      # once, after any web change (next build --webpack)
+npm start
+```
+
+Or double-click **`start-updatepilot.cmd`** in the project root. It opens the API and the web app in two windows, then the browser.
+
+What changes in production mode:
+- The web app is an optimised build.
+- The session cookie is marked **`Secure`**. Browsers accept this on `http://localhost`; any other address needs HTTPS.
+- Development-only features are hidden, such as the sample account on the login page.
+- The seed script refuses to run.
+
+## Packaged agent
+
+Build the portable agent from `agent/`:
+```powershell
+cd agent
+npm run package
+```
+This runs the tests, bundles the agent with esbuild, and creates:
+- `agent/release/UpdatePilotAgent/` (the folder)
+- `agent/release/UpdatePilotAgent-<version>.zip` (the file to share)
+
+| File | Purpose |
+|---|---|
+| `node.exe` | The official Node.js runtime (signed by the OpenJS Foundation), so no Node install is needed |
+| `agent.mjs`, `cli.mjs` | The bundled agent and its pairing tool (no `node_modules`) |
+| `Pair.cmd` | Asks for the pairing code and pairs the computer |
+| `Start Agent.cmd` | Starts the agent in a visible window (Ctrl+C to stop) |
+| `Status.cmd` | Shows whether the computer is paired |
+| `Enable Auto-start.cmd` / `Disable Auto-start.cmd` | Start the agent, minimised, when the user signs in to Windows |
+| `Uninstall.cmd` | Removes auto-start and deletes the saved key |
+| `README.txt` | Instructions for users |
+
+**For users:**
+1. Extract the zip.
+2. Double-click **Pair.cmd** and enter the code from Settings.
+3. Double-click **Start Agent.cmd**.
+
+The package uses signed `node.exe` and plain scripts instead of a custom `.exe`, because unsigned executables are blocked by Smart App Control / Windows Application Control.
+
 ## Tests
 
 | Part | Command | What runs |
 |---|---|---|
 | API | `cd api` → `npm test` | Type-check plus **101 tests**: auth, CSRF, data access, pairing, scans, updates, recovery, security |
 | Agent | `cd agent` → `npm test` | Type-check plus **25 tests**: WinGet parser, command safety, exit codes, version comparison, server-address safety |
-| Web | `cd web` → `npm run lint` | ESLint, including accessibility rules |
+| Web | `cd web` → `npm run lint` and `npm run build` | ESLint (including accessibility rules) and a full type-checked production build |
 
 API tests use a **separate database**. Create `api/.env.test` with a `DATABASE_URL` whose database name contains `_test` (for example `updatepilot_test`), then prepare it once:
 ```powershell
@@ -155,7 +206,7 @@ npm run seed
 ```
 The sample login is `demo@updatepilot.local` / `Demo@12345` (shown on the login page in development only).
 
-**The seed script deletes existing users, devices and most inventory and history records before inserting the samples. Do not run it against a database containing data you need to keep.** Sample data is illustrative, not the result of a real scan.
+**The seed script deletes existing users, devices and most inventory and history records before inserting the samples. Do not run it against a database containing data you need to keep.** It refuses to run when `NODE_ENV=production`. Sample data is illustrative, not the result of a real scan.
 
 ## Known limitations
 
@@ -163,7 +214,9 @@ The sample login is `demo@updatepilot.local` / `Demo@12345` (shown on the login 
 - **Only trusted WinGet packages can be updated.** Apps WinGet can't match are shown as *unmatched*, and Store or system apps as *unsupported*.
 - **Administrator prompts** must be answered on the computer itself.
 - **The agent key is stored unencrypted** in the user's own profile. It can be revoked instantly in Settings. Planned: Windows DPAPI encryption.
-- **Development uses `http://localhost`.** Production needs HTTPS, which also turns on the secure cookie flag.
+- **HTTPS is required beyond localhost.** The release runs on `http://localhost`. Any other address needs HTTPS, both for the `Secure` cookie and because the agent refuses unencrypted server addresses.
+- **The API runs TypeScript directly** (with tsx) in production mode. Compiling it to JavaScript is future work.
+- **The packaged agent shows a console window** while it runs, and auto-start uses the Windows Startup folder rather than a Windows service.
 - **No full Content-Security-Policy** for web pages yet (framing is blocked).
 - **Security insights are not available yet.** No free source reliably matches WinGet packages to vulnerabilities, and UpdatePilot does not guess. Planned: verified advisories from the NIST National Vulnerability Database for common apps.
 - **Expired sessions, pairing codes and previews** remain in the database. They are rejected on use. Planned: a daily cleanup job.
@@ -171,8 +224,10 @@ The sample login is `demo@updatepilot.local` / `Demo@12345` (shown on the login 
 
 ## Roadmap (Week 6)
 
-- Package the agent and test on a clean Windows machine
-- Fix defects found during clean-machine testing
-- User guide, troubleshooting guide and final documentation
-- Demo preparation
-- Planned improvements: DPAPI key encryption, verified Security insights (NVD), and a cleanup job
+- [x] Package the agent as a portable zip (no Node.js needed)
+- [x] Production mode for the API and web app, plus a one-click launcher
+- [ ] Test on a clean Windows machine and fix any defects found
+- [ ] User guide and troubleshooting guide
+- [ ] Final documentation (architecture and data model update, security and privacy notes)
+- [ ] Demo preparation and `v1.0.0` release
+- Planned improvements: DPAPI key encryption, verified Security insights (NVD), History export, and a cleanup job
