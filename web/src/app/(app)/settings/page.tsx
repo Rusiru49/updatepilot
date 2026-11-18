@@ -6,6 +6,7 @@ import { Laptop, LogOut, Moon, Sun } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import type { Device } from "@/lib/types";
 import { formatDate, timeAgo } from "@/lib/format";
+import { usePageTitle } from "@/lib/usePageTitle";
 import { useAuth } from "@/components/AuthProvider";
 import { Badge, Banner, Button, Card, EmptyState, ErrorState, Skeleton, type Tone } from "@/components/ui";
 import { setTheme, useTheme, type Theme } from "@/lib/theme";
@@ -17,6 +18,7 @@ const DEVICE_STATUS: Record<Device["status"], { tone: Tone; label: string }> = {
 };
 
 export default function SettingsPage() {
+  usePageTitle("Settings");
   const { user, logout } = useAuth();
   const router = useRouter();
 
@@ -155,7 +157,7 @@ export default function SettingsPage() {
                     </dl>
 
                     <div className="mt-4 flex flex-wrap items-center gap-2">
-                      <Button variant="secondary" disabled title="Key rotation is built later">
+                      <Button variant="secondary" disabled title="Key rotation is planned for a later version">
                         Rotate key
                       </Button>
 
@@ -308,16 +310,22 @@ function PairingCodeBox({
   onNewCode: () => void;
   onDone: () => void;
 }) {
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(0); // the real time is set by the timer below, straight away
   const [copied, setCopied] = useState(false);
 
-  // Tick every second for the countdown
+  // Tick every second for the countdown (first tick right away)
   useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(timer);
+    const tick = () => setNow(Date.now());
+    const first = setTimeout(tick, 0);
+    const timer = setInterval(tick, 1000);
+    return () => {
+      clearTimeout(first);
+      clearInterval(timer);
+    };
   }, []);
 
-  const secondsLeft = Math.max(0, Math.floor((new Date(expiresAt).getTime() - now) / 1000));
+  // now = 0 means "not ticked yet": show the full 10 minutes instead of "expired"
+  const secondsLeft = now ? Math.max(0, Math.floor((new Date(expiresAt).getTime() - now) / 1000)) : 600;
   const expired = secondsLeft === 0;
 
   async function copy() {
@@ -334,20 +342,20 @@ function PairingCodeBox({
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-3">
         <span
-          className={`rounded-md border border-dashed border-border px-4 py-2 font-mono text-2xl tracking-[0.3em] ${
+          className={`break-all rounded-md border border-dashed border-border px-4 py-2 font-mono text-2xl tracking-[0.3em] sm:text-3xl ${
             expired ? "text-muted line-through" : ""
           }`}
         >
           {code}
         </span>
         {!expired && (
-          <Button variant="secondary" onClick={copy}>
+          <Button variant="secondary" onClick={copy} aria-label={copied ? "Code copied" : "Copy pairing code"}>
             {copied ? "Copied" : "Copy"}
           </Button>
         )}
       </div>
 
-      <p className="text-sm text-muted">
+      <p className="text-sm text-muted" aria-live="polite">
         {expired
           ? "This code has expired. Generate a new one."
           : `Expires in ${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, "0")} · waiting for the agent…`}

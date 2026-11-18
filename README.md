@@ -2,7 +2,7 @@
 
 UpdatePilot is a Windows-first software update intelligence and management MVP. A web dashboard works together with a small Windows agent installed on the user's computer: the agent discovers installed applications with **Windows Package Manager (WinGet)**, the dashboard shows which apps have newer versions, and supported updates run **only after the user reviews and confirms them**. Every update is verified by a fresh scan before it is reported as successful.
 
-**Status:** Week 6 in progress (release and documentation). Weeks 1–5 are complete, and milestones M1–M3 are achieved: real scan data (about 100 apps on the development PC) and real verified updates (for example VLC 3.0.23 → 3.0.24 and CrystalDiskInfo 9.9.3 → 9.9.4). The Windows agent is now packaged as a portable zip, and the app runs in production mode.
+**Status:** **v1.0.0 released.** All six weeks of the plan are complete, and milestones M1–M4 are achieved: real scan data, verified updates (for example VLC 3.0.23 → 3.0.24 on the development PC, and CPUID HWMonitor 1.56 → 1.68 on a clean second PC), a tested and documented MVP, and a packaged agent. See [CHANGELOG.md](CHANGELOG.md).
 
 ## Project structure
 
@@ -238,3 +238,13 @@ The sample login is `demo@updatepilot.local` / `Demo@12345` (shown on the login 
 - [Troubleshooting](docs/TROUBLESHOOTING.md): common problems and fixes
 - [Security and privacy](docs/SECURITY_AND_PRIVACY.md): data stored, threat review, accepted risks, production checklist
 - [Architecture](docs/ARCHITECTURE.md): components, flows, data model, API and changes since the design
+
+## Future work
+
+- Encrypt the agent key with Windows DPAPI
+- Verified Security insights from the NIST National Vulnerability Database
+- Export inventory and history (CSV)
+- Daily cleanup of expired records
+- HTTPS deployment guide; compile the API to JavaScript
+- Run the agent as a Windows service, with a signed installer
+- Key rotation for agents

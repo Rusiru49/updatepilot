@@ -4,12 +4,14 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
-import type { AppItem, Dashboard, Paged, UpdateItem, UpdatesResponse } from "@/lib/types";
+import type { Dashboard, UpdateItem, UpdatesResponse } from "@/lib/types";
 import { activityLabel, timeAgo } from "@/lib/format";
+import { usePageTitle } from "@/lib/usePageTitle";
 import { Banner, Button, Card, EmptyState, ErrorState, Skeleton, StatCard } from "@/components/ui";
 import { ScanControl } from "@/components/ScanControl";
 
 export default function OverviewPage() {
+  usePageTitle("Overview");
   const [data, setData] = useState<Dashboard | null>(null);
   const [updates, setUpdates] = useState<UpdateItem[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +26,7 @@ export default function OverviewPage() {
       setData(dashboard);
       if (dashboard.device) {
         const res = await api<UpdatesResponse>(`/updates?deviceId=${dashboard.device.id}`);
-        setUpdates(res.items.slice(0, 5)); // no 100-app limit any more
+        setUpdates(res.items.slice(0, 5)); // show the first 5; the Updates page has them all
       } else {
         setUpdates([]);
       }
@@ -118,7 +120,7 @@ export default function OverviewPage() {
         <Card className="lg:col-span-2">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-semibold">Updates available</h2>
-            <Link href="/applications" className="text-sm font-medium text-primary hover:underline">
+            <Link href="/updates" className="text-sm font-medium text-primary hover:underline">
               View all updates
             </Link>
           </div>
@@ -130,11 +132,12 @@ export default function OverviewPage() {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
+                <caption className="sr-only">Updates available on {data.device.deviceName}</caption>
                 <thead>
                   <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted">
-                    <th className="py-2 pr-4 font-semibold">Application</th>
-                    <th className="py-2 pr-4 font-semibold">Installed</th>
-                    <th className="py-2 font-semibold">Available</th>
+                    <th scope="col" className="py-2 pr-4 font-semibold">Application</th>
+                    <th scope="col" className="py-2 pr-4 font-semibold">Installed</th>
+                    <th scope="col" className="py-2 font-semibold">Available</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -144,7 +147,7 @@ export default function OverviewPage() {
                         <Link href={`/applications/${a.id}`} className="font-medium hover:text-primary hover:underline">
                           {a.displayName}
                         </Link>
-                        <div className="font-mono text-xs text-muted">{a.packageId ?? a.publisher ?? ""}</div>
+                        <div className="break-all font-mono text-xs text-muted">{a.packageId ?? a.publisher ?? ""}</div>
                       </td>
                       <td className="py-3 pr-4 font-mono text-xs">{a.installedVersion}</td>
                       <td className="py-3 font-mono text-xs font-semibold">{a.availableVersion}</td>

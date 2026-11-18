@@ -1,7 +1,7 @@
 import os from "node:os";
 import path from "node:path";
 
-export const AGENT_VERSION = "0.1.0";
+export const AGENT_VERSION = "1.0.0";
 
 // Where the UpdatePilot API is (can be changed with an environment variable)
 export const SERVER_URL = (process.env.UPDATEPILOT_SERVER ?? "http://localhost:4000").replace(/\/+$/, "");
