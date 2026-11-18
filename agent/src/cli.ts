@@ -5,15 +5,15 @@ import { scanInstalledApps, summarize, WingetError } from "./winget";
 
 const [command, ...args] = process.argv.slice(2);
 
-const serverUrl = checkServerUrl(SERVER_URL);
-
-// npm run pair -- K7QM-4R2X   (add --force to replace an existing pairing)
+// pair <CODE>   (add --force to replace an existing pairing)
+//   Package:    double-click Pair.cmd
+//   Developers: npm run pair -- K7QM-4R2X
 async function pair() {
   const code = args.find((a) => !a.startsWith("--"))?.trim();
   const force = args.includes("--force");
 
   if (!code) {
-    console.error("Usage: npm run pair -- <PAIRING-CODE>");
+    console.error("Usage: Pair.cmd  (developers: npm run pair -- <PAIRING-CODE>)");
     process.exit(1);
   }
   if (!/^[A-Za-z0-9]{4}-?[A-Za-z0-9]{4}$/.test(code)) {
@@ -23,12 +23,17 @@ async function pair() {
 
   const existing = loadCredentials();
   if (existing && !force) {
-    console.error(`Already paired as "${existing.deviceName}". Run "npm run unpair" first, or add --force.`);
+    console.error(
+      `Already paired as "${existing.deviceName}". To pair again, run Uninstall.cmd first (developers: npm run unpair), or add --force.`,
+    );
     process.exit(1);
   }
 
+  // Only pairing needs the server address, so check it here (https only, except localhost or test mode).
+  // Inside pair(), a bad address shows a clean "ERROR: ..." message instead of crashing.
+  const serverUrl = checkServerUrl(SERVER_URL);
+
   const name = deviceName();
-  console.log(`Pairing "${name}" with ${SERVER_URL} ...`);
   console.log(`Pairing "${name}" with ${serverUrl} ...`);
 
   const res = await request<{ deviceId: string; deviceName: string; agentToken: string }>(serverUrl, "/agent/pair", {
@@ -46,14 +51,14 @@ async function pair() {
 
   console.log(`OK: paired as "${res.deviceName}".`);
   console.log(`Key saved to ${CREDENTIALS_FILE} (never share this file).`);
-  console.log("Start the agent with: npm start");
+  console.log('Start the agent: double-click "Start Agent.cmd" (developers: npm run dev)');
 }
 
-// npm run status
+// status   (Status.cmd / npm run status)
 async function status() {
   const c = loadCredentials();
   if (!c) {
-    console.log("Not paired. Run: npm run pair -- <PAIRING-CODE>");
+    console.log("Not paired. Double-click Pair.cmd (developers: npm run pair -- <PAIRING-CODE>)");
     return;
   }
 
@@ -74,14 +79,14 @@ async function status() {
   }
 }
 
-// npm run unpair
+// unpair   (used by Uninstall.cmd / npm run unpair)
 function unpair() {
   clearCredentials();
   console.log("Local key deleted.");
   console.log("To also remove this device from your account, click Revoke in Settings & agent.");
 }
 
-// npm run scan   (add -- --json to see every app)
+// scan   (developers: npm run scan, add -- --json to see every app)
 async function scan() {
   console.log("Scanning installed apps with winget... (this can take up to a minute)");
   const { apps, durationMs } = await scanInstalledApps();
@@ -120,6 +125,7 @@ Promise.resolve(run()).catch((err) => {
   if (err instanceof ApiError) console.error(`ERROR: ${err.message} (${err.code})`);
   else if (err instanceof NetworkError) console.error(`ERROR: ${err.message}. Is the UpdatePilot server running?`);
   else if (err instanceof WingetError) console.error(`ERROR: ${err.message}`);
+  else if (err instanceof Error) console.error(`ERROR: ${err.message}`); // e.g. an unsafe server address
   else console.error("ERROR: unexpected problem:", err);
   process.exit(1);
 });
