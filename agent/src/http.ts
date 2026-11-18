@@ -45,7 +45,8 @@ export async function request<T>(
   return body as T;
 }
 
-// The agent key must never travel unencrypted: https only, except http://localhost for development
+// The agent key must never travel unencrypted: https only, except http://localhost for development.
+// TEST ONLY: set UPDATEPILOT_ALLOW_HTTP=1 to allow http on a trusted local network (e.g. a second test PC).
 export function checkServerUrl(raw: string) {
   let url: URL;
   try {
@@ -54,6 +55,14 @@ export function checkServerUrl(raw: string) {
     throw new Error(`"${raw}" is not a valid server address.`);
   }
   const local = ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
+  const allowHttp = process.env.UPDATEPILOT_ALLOW_HTTP === "1";
+
   if (url.protocol === "https:" || (url.protocol === "http:" && local)) return url.origin;
-  throw new Error("The server address must start with https:// (http:// is only allowed for localhost).");
+  if (url.protocol === "http:" && allowHttp) {
+    console.warn("WARNING: test mode - the agent key is sent WITHOUT encryption. Use only on a trusted network.");
+    return url.origin;
+  }
+  throw new Error(
+    "The server address must start with https:// (http:// is only allowed for localhost, or in test mode with UPDATEPILOT_ALLOW_HTTP=1).",
+  );
 }

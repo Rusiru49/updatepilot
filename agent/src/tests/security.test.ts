@@ -15,4 +15,14 @@ describe("server address safety", () => {
     assert.throws(() => checkServerUrl("ftp://localhost"), /https/);
     assert.throws(() => checkServerUrl("not a url"), /not a valid/);
   });
+
+  it("allows http on the network only in test mode", () => {
+    process.env.UPDATEPILOT_ALLOW_HTTP = "1";
+    try {
+      assert.equal(checkServerUrl("http://192.168.1.20:4000"), "http://192.168.1.20:4000");
+    } finally {
+      delete process.env.UPDATEPILOT_ALLOW_HTTP;
+    }
+    assert.throws(() => checkServerUrl("http://192.168.1.20:4000"), /https/);
+  });
 });

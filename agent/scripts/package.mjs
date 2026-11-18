@@ -30,6 +30,8 @@ title UpdatePilot - Pair this computer
 cd /d "%~dp0"
 echo In UpdatePilot, open Settings ^& agent and click "Generate pairing code".
 echo.
+set "UPDATEPILOT_SERVER=http://localhost:4000"
+set /p UPDATEPILOT_SERVER=Server address [press Enter for http://localhost:4000]:
 set /p CODE=Enter the pairing code:
 "%~dp0node.exe" "%~dp0cli.mjs" pair %CODE%
 echo.
