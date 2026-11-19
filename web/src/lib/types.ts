@@ -1,4 +1,9 @@
-export type User = { id: string; email: string; displayName: string };
+export type User = {
+  id: string;
+  email: string;
+  displayName: string;
+  createdAt?: string;
+};
 
 export type UpdateStatus = "update_available" | "up_to_date" | "unsupported" | "unknown";
 
@@ -159,4 +164,4 @@ export type RecentUpdate = {
   finishedAt: string | null;
 };
 
-export type UpdatesResponse = { items: UpdateItem[]; total: number; recent: RecentUpdate[] }; 
+export type UpdatesResponse = { items: UpdateItem[]; total: number; recent: RecentUpdate[] };

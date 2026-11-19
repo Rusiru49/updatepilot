@@ -14,6 +14,10 @@ import updatesRouter from "./routes/updates";
 
 const app = express();
 
+// Online, requests pass through the host's proxies (Vercel and Render).
+// Trust them so the rate limiters see each visitor's real IP, not the proxy's.
+if (process.env.NODE_ENV === "production") app.set("trust proxy", 2);
+
 // Don't tell attackers which framework we use (T11)
 app.disable("x-powered-by");
 
@@ -33,7 +37,7 @@ app.use("/api/v1/agent", express.json({ limit: "2mb" })); // scan results can be
 app.use(express.json({ limit: "100kb" })); // everything else stays small
 app.use(cookieParser());
 
-// Max 20 login/register attempts per 15 minutes per IP
+// Max 20 login/register/change-password attempts per 15 minutes per IP
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 20,
@@ -57,6 +61,7 @@ app.get("/api/v1/health", (_req, res) => {
 
 app.use("/api/v1/auth/login", authLimiter);
 app.use("/api/v1/auth/register", authLimiter);
+app.use("/api/v1/auth/change-password", authLimiter); // stops guessing the current password
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/applications", applicationsRouter);
 app.use("/api/v1/dashboard", dashboardRouter);

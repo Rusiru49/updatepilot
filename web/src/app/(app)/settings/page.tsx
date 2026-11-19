@@ -1,13 +1,15 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Laptop, LogOut, Moon, Sun } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import type { Device } from "@/lib/types";
 import { formatDate, timeAgo } from "@/lib/format";
 import { usePageTitle } from "@/lib/usePageTitle";
 import { useAuth } from "@/components/AuthProvider";
+import { Avatar } from "@/components/Avatar";
+import { useLogout } from "@/components/useLogout";
 import { Badge, Banner, Button, Card, EmptyState, ErrorState, Skeleton, type Tone } from "@/components/ui";
 import { setTheme, useTheme, type Theme } from "@/lib/theme";
 
@@ -19,8 +21,8 @@ const DEVICE_STATUS: Record<Device["status"], { tone: Tone; label: string }> = {
 
 export default function SettingsPage() {
   usePageTitle("Settings");
-  const { user, logout } = useAuth();
-  const router = useRouter();
+  const { user } = useAuth();
+  const { askLogout, logoutDialog } = useLogout();
 
   const [devices, setDevices] = useState<Device[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -99,11 +101,6 @@ export default function SettingsPage() {
     } finally {
       setRevoking(false);
     }
-  }
-
-  async function handleLogout() {
-    await logout();
-    router.replace("/login");
   }
 
   return (
@@ -232,19 +229,30 @@ export default function SettingsPage() {
 
           <Card>
             <h2 className="mb-3 font-semibold">Account</h2>
-            <dl className="mb-4 space-y-2 text-sm">
-              <div>
-                <dt className="text-muted">Name</dt>
-                <dd className="font-medium">{user?.displayName}</dd>
-              </div>
-              <div>
-                <dt className="text-muted">Email</dt>
-                <dd className="break-all font-medium">{user?.email}</dd>
-              </div>
-            </dl>
-            <Button variant="secondary" onClick={handleLogout}>
-              <LogOut size={16} aria-hidden /> Log out
-            </Button>
+            <div className="mb-4 flex items-center gap-3">
+              <Avatar name={user?.displayName ?? ""} size="md" />
+              <dl className="min-w-0 space-y-1 text-sm">
+                <div>
+                  <dt className="sr-only">Name</dt>
+                  <dd className="truncate font-medium">{user?.displayName}</dd>
+                </div>
+                <div>
+                  <dt className="sr-only">Email</dt>
+                  <dd className="break-all text-muted">{user?.email}</dd>
+                </div>
+              </dl>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Link
+                href="/profile"
+                className="inline-flex items-center rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-background"
+              >
+                Edit profile
+              </Link>
+              <Button variant="secondary" onClick={askLogout}>
+                <LogOut size={16} aria-hidden /> Log out
+              </Button>
+            </div>
           </Card>
 
           <Card>
@@ -256,6 +264,8 @@ export default function SettingsPage() {
           </Card>
         </div>
       </div>
+
+      {logoutDialog}
     </div>
   );
 }

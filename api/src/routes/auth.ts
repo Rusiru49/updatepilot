@@ -7,6 +7,7 @@ import {
   createSession,
   deleteSession,
   hashPassword,
+  sha256,
   verifyPassword,
   toPublicUser,
 } from "../lib/auth";
@@ -14,10 +15,16 @@ import { requireAuth } from "../middleware/requireAuth";
 
 const router = Router();
 
+// One rule for every new password (sign-up and change-password)
+const passwordRule = z.string().min(8, "Password must be at least 8 characters").max(72);
+
+// One rule for the display name (sign-up and profile)
+const displayNameRule = z.string().trim().min(1, "Enter your name").max(60, "Use 60 characters or fewer");
+
 const registerSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(254),
-  password: z.string().min(8, "Password must be at least 8 characters").max(72),
-  displayName: z.string().trim().min(1).max(60),
+  password: passwordRule,
+  displayName: displayNameRule,
 });
 
 const loginSchema = z.object({
@@ -25,11 +32,21 @@ const loginSchema = z.object({
   password: z.string().min(1).max(72),
 });
 
+const profileSchema = z.object({
+  displayName: displayNameRule,
+});
+
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, "Enter your current password").max(72),
+  newPassword: passwordRule,
+});
+
 function sendValidationError(res: Response, error: z.ZodError) {
   res.status(400).json({
     error: {
       code: "VALIDATION_ERROR",
-      message: "Invalid request",
+      // Show the first problem in words the user understands
+      message: error.issues[0]?.message ?? "Invalid request",
       details: error.issues.map((i) => ({ field: i.path.join("."), issue: i.message })),
     },
   });
@@ -99,9 +116,64 @@ router.post("/logout", async (req, res) => {
   res.status(204).end();
 });
 
-// GET /api/v1/auth/me — also gives the page its CSRF token after a refresh
-router.get("/me", requireAuth, (req, res) => {
-  res.json({ user: req.user, csrfToken: req.csrfToken });
+// GET /api/v1/auth/me — the signed-in user (with "member since") and the page's CSRF token
+router.get("/me", requireAuth, async (req, res) => {
+  const user = await prisma.user.findUniqueOrThrow({ where: { id: req.user!.id } });
+  res.json({ user: toPublicUser(user), csrfToken: req.csrfToken });
+});
+
+// PATCH /api/v1/auth/me — change your display name
+router.patch("/me", requireAuth, async (req, res) => {
+  const parsed = profileSchema.safeParse(req.body);
+  if (!parsed.success) {
+    sendValidationError(res, parsed.error);
+    return;
+  }
+
+  const user = await prisma.user.update({
+    where: { id: req.user!.id },
+    data: { displayName: parsed.data.displayName },
+  });
+  await prisma.auditEvent.create({ data: { actorUserId: user.id, eventType: "auth.profile_updated" } });
+
+  res.json({ user: toPublicUser(user) });
+});
+
+// POST /api/v1/auth/change-password — needs the current password; signs out your OTHER sessions
+router.post("/change-password", requireAuth, async (req, res) => {
+  const parsed = changePasswordSchema.safeParse(req.body);
+  if (!parsed.success) {
+    sendValidationError(res, parsed.error);
+    return;
+  }
+  const { currentPassword, newPassword } = parsed.data;
+
+  const user = await prisma.user.findUniqueOrThrow({ where: { id: req.user!.id } });
+  if (!(await verifyPassword(currentPassword, user.passwordHash))) {
+    res.status(400).json({
+      error: {
+        code: "WRONG_PASSWORD",
+        message: "Your current password is incorrect.",
+        details: [{ field: "currentPassword", issue: "incorrect" }],
+      },
+    });
+    return;
+  }
+  if (currentPassword === newPassword) {
+    res.status(400).json({ error: { code: "SAME_PASSWORD", message: "Choose a password different from your current one." } });
+    return;
+  }
+
+  await prisma.user.update({ where: { id: user.id }, data: { passwordHash: await hashPassword(newPassword) } });
+
+  // Keep this browser signed in, sign out everywhere else (a stolen session stops working)
+  const currentTokenHash = sha256(req.cookies[SESSION_COOKIE]);
+  const ended = await prisma.session.deleteMany({
+    where: { userId: user.id, NOT: { tokenHash: currentTokenHash } },
+  });
+  await prisma.auditEvent.create({ data: { actorUserId: user.id, eventType: "auth.password_changed" } });
+
+  res.json({ ok: true, otherSessionsEnded: ended.count });
 });
 
 export default router;
