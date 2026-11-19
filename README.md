@@ -2,7 +2,22 @@
 
 UpdatePilot is a Windows-first software update intelligence and management MVP. A web dashboard works together with a small Windows agent installed on the user's computer: the agent discovers installed applications with **Windows Package Manager (WinGet)**, the dashboard shows which apps have newer versions, and supported updates run **only after the user reviews and confirms them**. Every update is verified by a fresh scan before it is reported as successful.
 
-**Status:** **v1.0.0 released.** All six weeks of the plan are complete, and milestones M1–M4 are achieved: real scan data, verified updates (for example VLC 3.0.23 → 3.0.24 on the development PC, and CPUID HWMonitor 1.56 → 1.68 on a clean second PC), a tested and documented MVP, and a packaged agent. See [CHANGELOG.md](CHANGELOG.md).
+**Status:** **v1.1.0 — released and deployed online.** All six weeks of the plan are complete, and milestones M1–M4 are achieved: real scan data, verified updates (for example VLC 3.0.23 → 3.0.24 on the development PC, and CPUID HWMonitor 1.56 → 1.68 on a clean second PC), a tested and documented MVP, and a packaged agent. See [CHANGELOG.md](CHANGELOG.md).
+
+## Live demo
+
+| | Link |
+|---|---|
+| **Dashboard** | **https://updatepilot.vercel.app**: create an account to try it |
+| **Agent download** | [GitHub Releases](https://github.com/Rusiru49/updatepilot/releases) (`UpdatePilotAgent-<version>.zip`) |
+| **Agent server address** (for `Pair.cmd`) | `https://updatepilot-api.onrender.com` |
+
+**To connect a Windows PC:**
+1. In the dashboard, go to **Settings & agent** and click **Generate pairing code**.
+2. Extract the agent zip, run **Pair.cmd**, enter the server address above and the code.
+3. Run **Start Agent.cmd**, then click **Scan now** in the dashboard.
+
+Hosted on free tiers: **Vercel** (web), **Render** (API) and **Neon** (PostgreSQL), all with HTTPS. The API sleeps after about 15 minutes without use, so the first visit may take up to a minute.
 
 ## Project structure
 
@@ -11,21 +26,23 @@ UpdatePilot is a Windows-first software update intelligence and management MVP. 
 | `web/` | Dashboard (browser) | Next.js 16 (App Router, Webpack mode), React 19, TypeScript, Tailwind CSS 3, lucide-react |
 | `api/` | Backend API | Node.js, Express 5, TypeScript (tsx), zod, Prisma 7, PostgreSQL |
 | `agent/` | Windows agent (runs on the user's PC) | Node.js, TypeScript, WinGet; packaged with esbuild |
+| `docs/` | Documentation | User guide, troubleshooting, security and privacy, architecture |
 
 ```
-Browser (web, :3000) ──/api rewrite──▶ API (:4000) ◀──HTTPS/Bearer key── Windows agent ──▶ winget
-                                           │
-                                       PostgreSQL
+Browser ──▶ Web (Next.js) ──/api rewrite──▶ API (Express) ◀──HTTPS + Bearer key── Windows agent ──▶ winget
+                                                │
+                                            PostgreSQL
 ```
 
-The web app calls the API through a Next.js rewrite (`/api/*` → `http://localhost:4000/api/*`), so the session cookie stays same-origin. The agent never accepts incoming connections: it polls the API for work every 5 seconds.
+The web app calls the API through a Next.js rewrite (`/api/*` → the API), so the session cookie stays same-origin. Locally the API is `http://localhost:4000`; online it is set with the `API_URL` environment variable. The agent never accepts incoming connections: it polls the API for work every 5 seconds.
 
 ## Features
 
 ### Web dashboard
-- **Accounts:** register, log in and log out, with HTTP-only session cookies.
-- **Overview:** app counts (up to date, updates available, unknown), last scan, agent status, recent activity and a **Scan now** button with live progress.
-- **Applications:** search, sorting, pagination and filters. The details page shows installed and available versions, package Id, source, version history and update attempts.
+- **Accounts:** register, log in, and log out (with a confirmation dialog), using HTTP-only session cookies.
+- **Profile:** initials avatar in the top bar, a profile page with "member since", editing your display name, and changing your password (which signs you out of your other sessions).
+- **Overview:** app counts (up to date, updates available, unknown), last scan, agent status, recent activity, and a **Scan now** button with live progress.
+- **Applications:** search, sorting, pagination and filters. The details page shows installed and available versions, package ID, source, version history and update attempts.
 - **Updates:** a list of apps with a newer trusted version, with major-upgrade and Store-app warnings. **Review → Confirm → Progress** dialog: Queued → Installing → Verifying → Done, with a clear result and **Try again** after a failure.
 - **History:** scan and update events with filters and outcomes.
 - **Settings & agent:** generate a pairing code (with countdown), see device status, revoke a device, and switch the theme (light or dark).
@@ -34,13 +51,13 @@ The web app calls the API through a Next.js rewrite (`/api/*` → `http://localh
 
 ### Windows agent
 - **Secure pairing** with a one-time code from the dashboard.
-- **Scans** with `winget list` (plus `winget export` to recover cut-off package Ids). It reads the table columns from the header each time, removes duplicates, and marks each app:
-  - **trusted:** a WinGet package with a complete, valid Id
+- **Scans** with `winget list` (plus `winget export` to recover cut-off package IDs). It reads the table columns from the header each time, removes duplicates, and marks each app:
+  - **trusted:** a WinGet package with a complete, valid ID
   - **unmatched:** a normal install that WinGet can't match (ARP)
   - **unsupported:** a Store or system (MSIX) app
 - **Updates** with one fixed command:
   `winget upgrade --id <Id> --exact --version <version> --source winget --silent --accept-package-agreements --accept-source-agreements`
-  It runs without a shell, and both the package Id and the version are validated by the agent as well as the server.
+  It runs without a shell, and both the package ID and the version are validated by the agent as well as the server.
 - **Verification:** after the installer finishes, the agent rescans the app (up to 3 times, 10 seconds apart). The **server** decides the result: succeeded, failed (version didn't change), or restart required.
 - **Resilience:**
   - a heartbeat every 30 seconds during long jobs
@@ -54,7 +71,7 @@ The web app calls the API through a Next.js rewrite (`/api/*` → `http://localh
 | Area | Endpoints |
 |---|---|
 | Health | `GET /health` |
-| Auth | `POST /auth/register`, `POST /auth/login`, `POST /auth/logout`, `GET /auth/me` |
+| Auth | `POST /auth/register`, `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`, `PATCH /auth/me` (display name), `POST /auth/change-password` |
 | Dashboard | `GET /dashboard` |
 | Devices | `GET /devices`, `POST /devices/pairing-codes`, `POST /devices/:id/scans`, `DELETE /devices/:id/credentials` |
 | Scans | `GET /scans/:id` |
@@ -65,11 +82,19 @@ The web app calls the API through a Next.js rewrite (`/api/*` → `http://localh
 
 Errors use one format: `{ "error": { "code": "...", "message": "...", "details": ... } }`.
 
+## Documentation
+
+- [User guide](docs/USER_GUIDE.md): setting up the agent and using the dashboard
+- [Troubleshooting](docs/TROUBLESHOOTING.md): common problems and fixes
+- [Security and privacy](docs/SECURITY_AND_PRIVACY.md): data stored, threat review, accepted risks, production checklist
+- [Architecture](docs/ARCHITECTURE.md): components, flows, data model, API and changes since the design
+- [Changelog](CHANGELOG.md): what's in each release
+
 ## Security
 
 UpdatePilot was reviewed against 12 threats (T1–T12) in Week 5. The main protections:
 
-- **Command injection (T1):** strict package-Id and version patterns on the server and the agent; winget runs with a fixed argument list and no shell.
+- **Command injection (T1):** strict package-ID and version patterns on the server and the agent; winget runs with a fixed argument list and no shell.
 - **Agent identity (T2, T3):**
   - single-use pairing codes (8 characters, 10 minutes)
   - a per-device agent key, stored on the server only as a SHA-256 hash
@@ -78,12 +103,14 @@ UpdatePilot was reviewed against 12 threats (T1–T12) in Week 5. The main prote
 - **Tampered jobs or results (T4):** the agent validates every job, and the server re-checks package trust and validates all results.
 - **Other users' data (T5):** every query is limited to the user's own devices; other users' items return 404, not 403.
 - **CSRF (T6):** `SameSite=Lax` cookies plus a per-session CSRF token in the `X-CSRF-Token` header, compared in constant time.
-- **Session theft (T7):** HTTP-only cookies (`Secure` in production), hashed session tokens, the CSRF token kept in memory only, and security headers (`nosniff`, `X-Frame-Options: DENY`, `frame-ancestors 'none'`, `Referrer-Policy`).
+- **Session theft (T7):** HTTP-only cookies (`Secure` in production), hashed session tokens, the CSRF token kept in memory only, security headers (`nosniff`, `X-Frame-Options: DENY`, `frame-ancestors 'none'`, `Referrer-Policy`), and changing your password signs out all your other sessions.
 - **False success (T8):** the result is decided by the server from a verification rescan, never by the installer alone.
 - **Replay and double updates (T9):** a one-time, 5-minute preview token, an Idempotency-Key, and one update per computer at a time.
-- **Brute force (T10):** rate limits (login/register 20 per 15 minutes, pairing 10 per 15 minutes), bcrypt (cost 12), and the same error for a wrong password and an unknown email.
+- **Brute force (T10):** rate limits (login, register and change-password 20 per 15 minutes; pairing 10 per 15 minutes), bcrypt (cost 12), and the same error for a wrong password and an unknown email.
 - **Leaks (T11):** password and token hashes are never returned, there are no stack traces in responses, and `X-Powered-By` is hidden.
 - **Denial of service (T12):** JSON body limits (100 kB, agent 2 MB), job timeouts and lost-agent recovery.
+
+Dependencies are checked with `npm audit`; Next.js was upgraded to 16.4.6 (security patch) before release.
 
 ## Run locally (development)
 
@@ -131,9 +158,9 @@ Open `http://localhost:3000` and create an account. The frontend runs in Webpack
 
 The agent key is saved in `%LOCALAPPDATA%\UpdatePilot\agent.json`. Press **Ctrl+C** to stop the agent; it tells the server before exiting.
 
-**Safety while testing updates:** don't update **Node.js**, **Git** or **App Installer** from UpdatePilot on the development PC, because the agent and WinGet depend on them. Use apps such as VLC or CrystalDiskInfo.
+**Safety while testing updates:** don't update **Node.js**, **Git**, **App Installer** or **PostgreSQL** from UpdatePilot on the computer that runs it, because the agent, WinGet and the API depend on them. Update them manually with UpdatePilot stopped. Use apps such as VLC or CrystalDiskInfo for testing.
 
-## Production mode (release / demo)
+## Production mode (local release / demo)
 
 `api/.env.production` contains `NODE_ENV=production` (no secrets; the database settings stay in `api/.env`).
 
@@ -146,13 +173,30 @@ npm run build      # once, after any web change (next build --webpack)
 npm start
 ```
 
-Or double-click **`start-updatepilot.cmd`** in the project root. It opens the API and the web app in two windows, then the browser.
+Or double-click **`start-updatepilot.cmd`** in the project root. It opens the API and the web app in two windows, then the browser. Make sure PostgreSQL is running first.
 
 What changes in production mode:
 - The web app is an optimised build.
 - The session cookie is marked **`Secure`**. Browsers accept this on `http://localhost`; any other address needs HTTPS.
 - Development-only features are hidden, such as the sample account on the login page.
 - The seed script refuses to run.
+
+Run `npm run build` again after any web change or after using `npm run dev`; otherwise `npm start` reports that no production build was found.
+
+## Deployment (online)
+
+The live version runs on three free services:
+
+| Part | Service | Settings |
+|---|---|---|
+| **Database** | Neon (PostgreSQL) | Connection string with `sslmode=require` |
+| **API** | Render (Web Service) | Root directory `api`; build `npm install --include=dev && npx prisma generate`; start `npx prisma migrate deploy && npx tsx src/index.ts`; environment `DATABASE_URL`, `NODE_ENV=production`, `WEB_ORIGIN=<dashboard URL>` |
+| **Web** | Vercel | Root directory `web`; environment `API_URL=<API URL>` (no trailing slash) |
+
+- Migrations run automatically every time the API starts.
+- The API uses the port the host provides (`PORT`), and trusts the host's proxy in production so rate limits see real visitor IPs.
+- **Every `git push` to `master` redeploys** both the web app and the API.
+- The online database is separate from the local one, so accounts must be created again online.
 
 ## Packaged agent
 
@@ -163,32 +207,32 @@ npm run package
 ```
 This runs the tests, bundles the agent with esbuild, and creates:
 - `agent/release/UpdatePilotAgent/` (the folder)
-- `agent/release/UpdatePilotAgent-<version>.zip` (the file to share)
+- `agent/release/UpdatePilotAgent-<version>.zip` (the file to share; also published on GitHub Releases)
 
 | File | Purpose |
 |---|---|
 | `node.exe` | The official Node.js runtime (signed by the OpenJS Foundation), so no Node install is needed |
 | `agent.mjs`, `cli.mjs` | The bundled agent and its pairing tool (no `node_modules`) |
-| `Pair.cmd` | Asks for the pairing code and pairs the computer |
+| `Pair.cmd` | Asks for the server address and pairing code, and pairs the computer |
 | `Start Agent.cmd` | Starts the agent in a visible window (Ctrl+C to stop) |
-| `Status.cmd` | Shows whether the computer is paired |
+| `Status.cmd` | Shows whether the computer is paired and whether its key is accepted |
 | `Enable Auto-start.cmd` / `Disable Auto-start.cmd` | Start the agent, minimised, when the user signs in to Windows |
 | `Uninstall.cmd` | Removes auto-start and deletes the saved key |
 | `README.txt` | Instructions for users |
 
 **For users:**
-1. Extract the zip.
-2. Double-click **Pair.cmd** and enter the code from Settings.
+1. Extract the zip (right-click → **Properties** → **Unblock** first if it was downloaded).
+2. Double-click **Pair.cmd**, enter the server address (`https://updatepilot-api.onrender.com` for the live version, or press Enter for `http://localhost:4000`) and the code from Settings.
 3. Double-click **Start Agent.cmd**.
 
-The package uses signed `node.exe` and plain scripts instead of a custom `.exe`, because unsigned executables are blocked by Smart App Control / Windows Application Control.
+The package uses signed `node.exe` and plain scripts instead of a custom `.exe`, because unsigned executables are blocked by Smart App Control / Windows Application Control. For testing on a trusted local network without HTTPS, a developer can set `UPDATEPILOT_ALLOW_HTTP=1` (off by default; the agent shows a warning).
 
 ## Tests
 
-| Part | Command | What runs |F
+| Part | Command | What runs |
 |---|---|---|
-| API | `cd api` → `npm test` | Type-check plus **101 tests**: auth, CSRF, data access, pairing, scans, updates, recovery, security |
-| Agent | `cd agent` → `npm test` | Type-check plus **25 tests**: WinGet parser, command safety, exit codes, version comparison, server-address safety |
+| API | `cd api` → `npm test` | Type-check plus **106 tests**: auth, profile and password, CSRF, data access, pairing, scans, updates, recovery, security |
+| Agent | `cd agent` → `npm test` | Type-check plus **26 tests**: WinGet parser, command safety, exit codes, version comparison, server-address safety |
 | Web | `cd web` → `npm run lint` and `npm run build` | ESLint (including accessibility rules) and a full type-checked production build |
 
 API tests use a **separate database**. Create `api/.env.test` with a `DATABASE_URL` whose database name contains `_test` (for example `updatepilot_test`), then prepare it once:
@@ -197,6 +241,8 @@ cd api
 npm run test:db
 ```
 The test helper refuses to reset any database whose name doesn't contain `_test`.
+
+The release was also tested in production mode, on a second clean Windows PC, and online (agent connected to the live API over HTTPS).
 
 ## Sample data
 
@@ -214,30 +260,16 @@ The sample login is `demo@updatepilot.local` / `Demo@12345` (shown on the login 
 - **Only trusted WinGet packages can be updated.** Apps WinGet can't match are shown as *unmatched*, and Store or system apps as *unsupported*.
 - **Administrator prompts** must be answered on the computer itself.
 - **The agent key is stored unencrypted** in the user's own profile. It can be revoked instantly in Settings. Planned: Windows DPAPI encryption.
-- **HTTPS is required beyond localhost.** The release runs on `http://localhost`. Any other address needs HTTPS, both for the `Secure` cookie and because the agent refuses unencrypted server addresses.
-- **The API runs TypeScript directly** (with tsx) in production mode. Compiling it to JavaScript is future work.
+- **Free hosting:** the online API sleeps after about 15 minutes without use, so the first request can take up to a minute.
+- **HTTPS is required beyond localhost.** The live version uses HTTPS; a local network setup without HTTPS needs the test-only switch.
+- **The API runs TypeScript directly** (with tsx). Compiling it to JavaScript is future work.
 - **The packaged agent shows a console window** while it runs, and auto-start uses the Windows Startup folder rather than a Windows service.
+- **No profile photo upload:** avatars use initials, so no personal images are stored (and free hosting has no permanent file storage).
+- **Email can't be changed** in this version, and there is no self-service account deletion yet.
 - **No full Content-Security-Policy** for web pages yet (framing is blocked).
 - **Security insights are not available yet.** No free source reliably matches WinGet packages to vulnerabilities, and UpdatePilot does not guess. Planned: verified advisories from the NIST National Vulnerability Database for common apps.
 - **Expired sessions, pairing codes and previews** remain in the database. They are rejected on use. Planned: a daily cleanup job.
 - The dashboard focuses on **one computer** (the most recently active one).
-
-## Roadmap (Week 6)
-
-- [x] Package the agent as a portable zip (no Node.js needed)
-- [x] Production mode for the API and web app, plus a one-click launcher
-- [ ] Test on a clean Windows machine and fix any defects found
-- [ ] User guide and troubleshooting guide
-- [ ] Final documentation (architecture and data model update, security and privacy notes)
-- [ ] Demo preparation and `v1.0.0` release
-- Planned improvements: DPAPI key encryption, verified Security insights (NVD), History export, and a cleanup job
-
-## Documentation
-
-- [User guide](docs/USER_GUIDE.md): setting up the agent and using the dashboard
-- [Troubleshooting](docs/TROUBLESHOOTING.md): common problems and fixes
-- [Security and privacy](docs/SECURITY_AND_PRIVACY.md): data stored, threat review, accepted risks, production checklist
-- [Architecture](docs/ARCHITECTURE.md): components, flows, data model, API and changes since the design
 
 ## Future work
 
@@ -245,6 +277,8 @@ The sample login is `demo@updatepilot.local` / `Demo@12345` (shown on the login 
 - Verified Security insights from the NIST National Vulnerability Database
 - Export inventory and history (CSV)
 - Daily cleanup of expired records
-- HTTPS deployment guide; compile the API to JavaScript
+- Compile the API to JavaScript
 - Run the agent as a Windows service, with a signed installer
 - Key rotation for agents
+- Account deletion and email change
+- Support for several computers on the Overview page
