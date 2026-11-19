@@ -3,13 +3,11 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // The browser calls /api/... on port 3000; Next.js forwards it to the backend on port 4000.
   // Same origin → cookies just work, no CORS problems.
+  
   async rewrites() {
-    return [
-      {
-        source: "/api/:path*",
-        destination: `${process.env.API_URL ?? "http://localhost:4000"}/api/:path*`,
-      },
-    ];
+    // Local: http://localhost:4000. Online: set API_URL in Vercel to the Render address.
+    const api = (process.env.API_URL ?? "http://localhost:4000").replace(/\/+$/, "");
+    return [{ source: "/api/:path*", destination: `${api}/api/:path*` }];
   },
 
     poweredByHeader: false, // hides "X-Powered-By: Next.js"
